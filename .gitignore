@@ -1,0 +1,16 @@
+# OS generated files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Praat output / temporary files
+*.Table
+*.Collection
+*.praatpic
+*results.txt
+*results.csv
+*results.tsv
+
+# Editor / IDE
+.vscode/
+.idea/
