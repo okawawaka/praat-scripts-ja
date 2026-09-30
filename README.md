@@ -59,6 +59,16 @@
 
 ---
 
+### 🌐 Google Colab 版（ブラウザで即実行可能）
+
+Praat をインストールしていない環境でも、ブラウザ上のファイル選択ダイアログから実行できる Google Colab ノートブックです。Praat の C++ エンジン（Parselmouth）を使用しているため、**Praat 本体と 100% 同一の結果**が得られます。
+
+| ノートブック名 | リンク / 実行 | 概要 |
+| :--- | :--- | :--- |
+| **区間継続時間の計算** | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/okawawaka/praat-scripts-ja/blob/main/notebooks/calculate_segment_durations.ipynb) | ダイアログで TextGrid を選択し、継続時間（秒/ms）を一覧集計して TSV をダウンロード |
+
+---
+
 ## 🚀 使い方（Praat スクリプトの実行方法）
 
 ### 前提条件
