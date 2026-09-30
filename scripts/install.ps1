@@ -14,6 +14,22 @@ $praatDir = Join-Path $env:USERPROFILE "Praat"
 $pluginDir = Join-Path $praatDir "plugin_JapaneseTools"
 $srcDir = Split-Path -Parent $PSScriptRoot
 
+# 0. ZIP未展開（Temp実行）セーフティチェック
+$tempPath = [System.IO.Path]::GetTempPath()
+if ($srcDir.StartsWith($tempPath, [System.StringComparison]::OrdinalIgnoreCase) -or $srcDir -match "(?i)\\AppData\\Local\\Temp\\") {
+    Write-Host "--------------------------------------------------------" -ForegroundColor Red
+    Write-Host "【エラー】ZIPファイルが解凍（展開）されていません！" -ForegroundColor Red
+    Write-Host "--------------------------------------------------------" -ForegroundColor Red
+    Write-Host ""
+    Write-Host "ダウンロードした ZIP ファイルを右クリックし、" -ForegroundColor Yellow
+    Write-Host "「すべて展開」を選んでから、展開されたフォルダ内の" -ForegroundColor Yellow
+    Write-Host "「install.bat」を実行してください。" -ForegroundColor Yellow
+    Write-Host ""
+    Write-Host "※一時フォルダのまま実行すると、後でファイルが消えてしまうため中断しました。" -ForegroundColor Gray
+    Write-Host "--------------------------------------------------------" -ForegroundColor Red
+    exit 1
+}
+
 # 1. Praat 設定フォルダの確認・作成
 if (-not (Test-Path -LiteralPath $praatDir)) {
     Write-Host "[作成中] Praat 設定ディレクトリを作成します: $praatDir" -ForegroundColor Yellow
