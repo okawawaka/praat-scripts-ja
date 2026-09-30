@@ -1,131 +1,128 @@
-# Praat Scripts (日本語解説版 / Japanese Edition) 🎙️
+# Praat Scripts (日本語解説版 / Japanese Edition)
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 [![Praat: 6.0+](https://img.shields.io/badge/Praat-6.0%2B-green.svg)](https://www.fon.hum.uva.nl/praat/)
 
-言語学・音声学・音響分析のための **日本語解説付き Praat スクリプト集** です。  
-世界中で広く利用されている Mietta Lennes 氏の **SpeCT (Speech Corpus Toolkit for Praat)** および [FieldDB/Praat-Scripts](https://github.com/FieldDB/Praat-Scripts) をベースに、**入力画面の完全日本語化**、**初心者向けの丁寧なインライン解説**、および **現行の Praat 6.x 系モダン構文へのリファクタリング** を施しています。
+言語学・音声学・音響分析のための日本語解説付き Praat スクリプト集です。  
+Mietta Lennes 氏の **SpeCT (Speech Corpus Toolkit for Praat)** および [FieldDB/Praat-Scripts](https://github.com/FieldDB/Praat-Scripts) をベースに、ダイアログの日本語化、スクリプト内解説の追加、および Praat 6.x 系構文へのリファクタリングを行っています。
 
 ---
 
-## 💡 本リポジトリの特徴
+## 特徴
 
-1. **すべての操作ダイアログが日本語**:
-   - スクリプト実行時の入力フォーム（パラメータ設定画面）を自然な日本語にローカライズ。
-2. **Praat 6.x 系モダン構文に準拠**:
-   - 旧式コマンドを最新の `selectObject` 等の関数型構文に更新し、警告が出ず安全に動作します。
-3. **日本語Windows環境への配慮**:
-   - 日本語パスや空白を含むディレクトリでもエラーを起こしにくいセーフティガード（自動スラッシュ補正など）を搭載。
-4. **Excel / R との親和性**:
-   - 出力形式はすべてタブ区切りテキスト（TSV）に統一されており、Excelや統計解析ソフトですぐに開いて分析できます。
+1. **ダイアログの日本語化**:
+   - スクリプト実行時のパラメータ設定画面を日本語化しています。
+2. **Praat 6.x 構文への対応**:
+   - 旧形式のコマンドを最新の `selectObject` 等の関数型構文に更新し、警告なく動作するようにしています。
+3. **ファイルパスの処理**:
+   - 空白や日本語を含むディレクトリパスでもエラーが発生しにくいよう配慮しています。
+4. **TSV形式での出力**:
+   - 分析結果などの出力ファイルはタブ区切りテキスト（TSV）形式に統一しており、表計算ソフトやR等ですぐに読み込めます。
 
 ---
 
-## 📂 収録スクリプト一覧 & 逆引きガイド
+## 収録スクリプト一覧
 
 ### 1. 音声切り出し・区間アノテーション (`scripts/segmentation/`)
 
-| スクリプト名 | やりたいこと / 主な用途 |
+| スクリプト名 | 主な用途 |
 | :--- | :--- |
-| **[`extract_intervals_to_wav.praat`](scripts/segmentation/extract_intervals_to_wav.praat)** | TextGridのラベル区間ごとに、個別のWAVファイルとして一括切り出し保存する（★**ハイブリッド対応**） |
-| **[`mark_pauses.praat`](scripts/segmentation/mark_pauses.praat)** | 音声の強さ（音量）から無音・ポーズ区間を自動検出し、TextGridに境界線・ラベルを付与する（★**ハイブリッド対応**） |
+| **[`extract_intervals_to_wav.praat`](scripts/segmentation/extract_intervals_to_wav.praat)** | TextGridのラベル区間ごとに、個別のWAVファイルとして切り出して保存する |
+| **[`mark_pauses.praat`](scripts/segmentation/mark_pauses.praat)** | 音声の音量から無音・ポーズ区間を検出し、TextGridに境界線とラベルを付与する |
 
 ---
 
-### 2. 音響特徴量・分析データ一括抽出 (`scripts/acoustic-analysis/`)
+### 2. 音響特徴量・分析データ抽出 (`scripts/acoustic-analysis/`)
 
-| スクリプト名 | やりたいこと / 主な用途 |
+| スクリプト名 | 主な用途 |
 | :--- | :--- |
-| **[`collect_formant_data.praat`](scripts/acoustic-analysis/collect_formant_data.praat)** | 各母音区間の中央点におけるフォルマント（F1〜F5）と帯域幅を一括測定し、TSVに出力する（★**ハイブリッド対応**） |
-| **[`collect_pitch_data.praat`](scripts/acoustic-analysis/collect_pitch_data.praat)** | 各区間のピッチ（F0）の平均値・中央値・最大/最小値・標準偏差を一括集計する（★**ハイブリッド対応**） |
-| **[`calculate_segment_durations.praat`](scripts/acoustic-analysis/calculate_segment_durations.praat)** | 各区間の開始時刻・終了時刻・継続時間（秒/ミリ秒）を一覧集計する（★**ハイブリッド対応 / TextGrid書き込み対応**） |
+| **[`collect_formant_data.praat`](scripts/acoustic-analysis/collect_formant_data.praat)** | 各母音区間の中央点におけるフォルマント（F1〜F5）と帯域幅を測定し、TSVに出力する |
+| **[`collect_pitch_data.praat`](scripts/acoustic-analysis/collect_pitch_data.praat)** | 各区間のピッチ（F0）の平均値・中央値・最大/最小値・標準偏差を集計する |
+| **[`calculate_segment_durations.praat`](scripts/acoustic-analysis/calculate_segment_durations.praat)** | 各区間の開始時刻・終了時刻・継続時間（秒/ミリ秒）を集計する |
 
 ---
 
-### 3. 音声ファイル一括前処理 (`scripts/batch-processing/`)
+### 3. 音声ファイル前処理 (`scripts/batch-processing/`)
 
-| スクリプト名 | やりたいこと / 主な用途 |
+| スクリプト名 | 主な用途 |
 | :--- | :--- |
-| **[`change_sample_rate.praat`](scripts/batch-processing/change_sample_rate.praat)** | フォルダ内のすべてのWAVファイルを指定したサンプリングレート（16kHz等）に一括リサンプリングする（★**ハイブリッド対応**） |
-| **[`convert_stereo_to_mono.praat`](scripts/batch-processing/convert_stereo_to_mono.praat)** | ステレオ音声（2ch）からモノラル（1ch）に一括変換する（左右個別抽出または合成）（★**ハイブリッド対応**） |
+| **[`change_sample_rate.praat`](scripts/batch-processing/change_sample_rate.praat)** | フォルダ内のWAVファイルを指定したサンプリングレート（16kHz等）にリサンプリングする |
+| **[`convert_stereo_to_mono.praat`](scripts/batch-processing/convert_stereo_to_mono.praat)** | ステレオ音声（2ch）からモノラル（1ch）に変換する（左右個別抽出または合成） |
 
 ---
 
 ### 4. グラフ・母音図描画 (`scripts/visualization/`)
 
-| スクリプト名 | やりたいこと / 主な用途 |
+| スクリプト名 | 主な用途 |
 | :--- | :--- |
-| **[`draw_formant_chart.praat`](scripts/visualization/draw_formant_chart.praat)** | 抽出したフォルマントデータから、音声学の慣例（軸反転）に従った F1-F2 母音図を自動描画する（★**ハイブリッド対応**） |
+| **[`draw_formant_chart.praat`](scripts/visualization/draw_formant_chart.praat)** | 抽出したフォルマントデータから F1-F2 母音図を描画する |
 
 ---
 
-### 🌐 Google Colab 版（ブラウザで即実行可能）
+### Google Colab 版
 
-Praat をインストールしていない環境でも、ブラウザ上のファイル選択ダイアログから実行できる Google Colab ノートブック群です。Praat の C++ コアエンジン（`praat-parselmouth`）を使用しているため、**Praat 本体と 100% 同一の結果**が得られます。
+Praat をローカル環境にインストールすることなく、ブラウザ上で実行できる Google Colab ノートブックです（Pythonライブラリ `praat-parselmouth` を使用）。
 
-| ノートブック名 | リンク / 実行 | 概要 |
+| ノートブック名 | リンク | 概要 |
 | :--- | :--- | :--- |
-| **区間継続時間の計算** | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/okawawaka/praat-scripts-ja/blob/main/notebooks/calculate_segment_durations.ipynb) | ダイアログで TextGrid を選択し、継続時間（秒/ms）を一覧集計して TSV をダウンロード |
-| **フォルマント一括抽出** | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/okawawaka/praat-scripts-ja/blob/main/notebooks/collect_formant_data.ipynb) | 音声とTextGridから各区間中央点のF1〜F5および帯域幅を一括測定して TSV をダウンロード |
-| **ピッチ（F0）統計一括抽出** | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/okawawaka/praat-scripts-ja/blob/main/notebooks/collect_pitch_data.ipynb) | 音声とTextGridから各区間の平均・中央値・最大/最小ピッチを測定して TSV をダウンロード |
-| **音声区間の一括切り出し** | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/okawawaka/praat-scripts-ja/blob/main/notebooks/extract_intervals_to_wav.ipynb) | TextGridの区間ラベルに従ってWAVを一括切り出しし、ZIPアーカイブで一括ダウンロード |
-| **無音・ポーズの自動検出** | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/okawawaka/praat-scripts-ja/blob/main/notebooks/mark_pauses.ipynb) | 音声(WAV)から無音・ポーズ区間を自動検出し、生成されたTextGridをZIPで一括ダウンロード |
+| **区間継続時間の計算** | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/okawawaka/praat-scripts-ja/blob/main/notebooks/calculate_segment_durations.ipynb) | TextGrid を選択し、継続時間（秒/ms）を集計して TSV をダウンロード |
+| **フォルマント抽出** | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/okawawaka/praat-scripts-ja/blob/main/notebooks/collect_formant_data.ipynb) | 音声とTextGridから各区間中央点のF1〜F5および帯域幅を測定して TSV をダウンロード |
+| **ピッチ（F0）統計抽出** | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/okawawaka/praat-scripts-ja/blob/main/notebooks/collect_pitch_data.ipynb) | 音声とTextGridから各区間の平均・中央値・最大/最小ピッチを測定して TSV をダウンロード |
+| **音声区間の切り出し** | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/okawawaka/praat-scripts-ja/blob/main/notebooks/extract_intervals_to_wav.ipynb) | TextGridの区間ラベルに従ってWAVを切り出し、ZIPでダウンロード |
+| **無音・ポーズの自動検出** | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/okawawaka/praat-scripts-ja/blob/main/notebooks/mark_pauses.ipynb) | 音声(WAV)から無音・ポーズ区間を検出し、生成されたTextGridをZIPでダウンロード |
+
+> [!NOTE]
+> **分析環境による測定値の差異について**:  
+> フォルマントなどの音響特徴量の数値は、OS（Windows / macOS / Linux）やCPUアーキテクチャ、浮動小数点演算の仕様、Praatとライブラリ（parselmouth）のバージョンの違い等により、Praat本体で実行した場合と Google Colab 上で実行した場合とでわずかに異なる値が出力される可能性があります。厳密な比較を行う実験・研究では、同一の実行環境で測定することを推奨します。
 
 ---
 
-## ⚡ Praat 拡張機能（プラグイン）としてワンクリック導入
+## プラグインとしての導入
 
-本スクリプト集は、**Praat 公式のプラグインシステム（Praat Plugins）** に完全対応しています。  
-拡張機能として登録すると、スクリプトファイルを毎回開く必要がなくなり、**Praat のメニューバーや右側アクションボタンからワンクリックで呼び出せる**ようになります。
+本スクリプト集は Praat のプラグイン機能に対応しています。プラグインとして登録することで、スクリプトファイルを個別に開くことなく、Praat のメニューバーやボタンから実行できます。
 
-### 📦 インストール方法（Windows）
+### インストール方法（Windows）
 
-1. **`install.bat` をダブルクリックするだけ！**
-   - 自動的に Praat の設定ディレクトリ（`%USERPROFILE%\Praat\plugin_JapaneseTools`）へリンクが作成されます。
-   - 管理者権限は不要です。
+1. **`install.bat` を実行**:
+   - Praat の設定ディレクトリ（`%USERPROFILE%\Praat\plugin_JapaneseTools`）にリンクが作成されます（管理者権限は不要です）。
 2. **Praat を起動（または再起動）**:
    - 上部メニューバー **`Praat`** $\to$ **`日本語音声ツール (JA)`** に各種ツールが追加されます。
-   - また、オブジェクト選択時（Sound や TextGrid を選んだ際）には、右側パネルに **`日本語ツール (JA)`** ボタンが表示され、選択中オブジェクトを直接ワンクリック処理できます。
+   - オブジェクト（Sound や TextGrid）を選択した際には、右側パネルにも **`日本語ツール (JA)`** ボタンが表示され、直接処理を実行できます。
 
 > [!NOTE]
 > **アンインストール方法**:  
-> いつでも `uninstall.bat` をダブルクリックするだけで安全に登録解除できます（スクリプト本体は削除されません）。
+> `uninstall.bat` を実行すると登録を解除できます（スクリプト本体は削除されません）。
 
 ---
 
-## 🚀 使い方（単体 Praat スクリプトとして実行する場合）
+## 単体スクリプトとしての実行方法
 
 1. **Praat を起動**:
-   - 上部メニューバーの **`Praat`** $\to$ **`Open Praat script...`** を選択します。
+   - メニューバーの **`Praat`** $\to$ **`Open Praat script...`** を選択します。
 2. **スクリプトを選択**:
    - 実行したいスクリプト（例: `scripts/segmentation/extract_intervals_to_wav.praat`）を開きます。
 3. **スクリプトを実行**:
-   - スクリプトエディタが開いたら、メニューの **`Run`** $\to$ **`Run`**（またはショートカット `Ctrl + R` / `Cmd + R`）を押します。
+   - スクリプトエディタのメニュー **`Run`** $\to$ **`Run`**（またはショートカット `Ctrl + R` / `Cmd + R`）を選択します。
 4. **設定ダイアログに入力**:
-   - 日本語のフォームが表示されます。フォルダのパスやパラメータを入力して **`OK`** を押すと自動処理が始まります。
+   - パスやパラメータを入力して **`OK`** を押すと処理が開始されます。
 
 ---
 
-## 🧪 お手元の音声データで試す準備
+## 実行前の準備
 
-本リポジトリには著作権・肖像権保護のためサンプルの音声ファイルは同梱していません。ご自身の手持ちの音声や研究データでお試しください。
-
-1. **同名のペアを用意する**:
-   - 多くのスクリプトは、同じフォルダ内に同名の `.wav` と `.TextGrid` があることを前提としています。  
-     （例: `speaker01_001.wav` と `speaker01_001.TextGrid`）
-2. **Tier番号を確認する**:
-   - 分析対象としたい段（単語Tier、音素Tierなど）が上から何段目（1, 2, ...）にあるかを確認して、設定画面の「対象Tier番号」に指定してください。
+1. **音声ファイルと TextGrid のファイル名**:
+   - 多くのスクリプトは、同一ディレクトリ内に同名の `.wav` と `.TextGrid` が配置されていることを前提としています（例: `speaker01_001.wav` と `speaker01_001.TextGrid`）。
+2. **Tier番号の確認**:
+   - 分析対象とする区間（単語、音素など）が含まれる Tier が上から何段目（1, 2, ...）にあるかを確認し、設定ダイアログの「対象Tier番号」に指定してください。
 
 ---
 
-## 📜 ライセンス・原著作者クレジット
+## ライセンス・クレジット
 
 本プロジェクトは **GNU General Public License v3.0 (GPL-3.0)** のもとで配布されています。
 
-- **原典・オリジナルスクリプト**:
-  - **Mietta Lennes 氏** (ヘルシンキ大学) — [SpeCT (Speech Corpus Toolkit for Praat)](http://www.helsinki.fi/~lennes/praat-scripts/)
+- **オリジナルスクリプト**:
+  - Mietta Lennes 氏 (University of Helsinki) — [SpeCT (Speech Corpus Toolkit for Praat)](http://www.helsinki.fi/~lennes/praat-scripts/)
   - [FieldDB/Praat-Scripts](https://github.com/FieldDB/Praat-Scripts)
-- **日本語化・モダンPraat構文対応・ドキュメント作成**:
+- **日本語化・Praat 6.x 対応**:
   - [okawawaka](https://github.com/okawawaka)
-
-音声学・音響音声学コミュニティに多大な貢献をされた Mietta Lennes 氏をはじめとする原作者・開発者の方々に深く感謝申し上げます。
