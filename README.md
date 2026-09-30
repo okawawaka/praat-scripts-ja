@@ -46,8 +46,8 @@
 
 | スクリプト名 | やりたいこと / 主な用途 |
 | :--- | :--- |
-| **[`change_sample_rate.praat`](scripts/batch-processing/change_sample_rate.praat)** | フォルダ内のすべてのWAVファイルを指定したサンプリングレート（16kHz等）に一括リサンプリングする |
-| **[`convert_stereo_to_mono.praat`](scripts/batch-processing/convert_stereo_to_mono.praat)** | ステレオ音声（2ch）からモノラル（1ch）に一括変換する（左右個別抽出または合成） |
+| **[`change_sample_rate.praat`](scripts/batch-processing/change_sample_rate.praat)** | フォルダ内のすべてのWAVファイルを指定したサンプリングレート（16kHz等）に一括リサンプリングする（★**ハイブリッド対応**） |
+| **[`convert_stereo_to_mono.praat`](scripts/batch-processing/convert_stereo_to_mono.praat)** | ステレオ音声（2ch）からモノラル（1ch）に一括変換する（左右個別抽出または合成）（★**ハイブリッド対応**） |
 
 ---
 
@@ -55,7 +55,7 @@
 
 | スクリプト名 | やりたいこと / 主な用途 |
 | :--- | :--- |
-| **[`draw_formant_chart.praat`](scripts/visualization/draw_formant_chart.praat)** | 抽出したフォルマントデータから、音声学の慣例（軸反転）に従った F1-F2 母音図を自動描画する |
+| **[`draw_formant_chart.praat`](scripts/visualization/draw_formant_chart.praat)** | 抽出したフォルマントデータから、音声学の慣例（軸反転）に従った F1-F2 母音図を自動描画する（★**ハイブリッド対応**） |
 
 ---
 
