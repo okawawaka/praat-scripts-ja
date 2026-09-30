@@ -87,6 +87,7 @@ endif
 
 # 描画画面（Praat Picture）の初期化
 Erase all
+Select outer viewport: 0, 8, 0, 8
 Select inner viewport: 1.5, 6.5, 1.5, 6.5
 Font size: f_size
 Helvetica
