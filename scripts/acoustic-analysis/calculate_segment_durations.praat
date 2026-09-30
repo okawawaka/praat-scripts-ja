@@ -31,18 +31,18 @@ if num_selected > 0
     # ==========================================================================
     beginPause: "区間継続時間の計算（選択中のオブジェクトを分析）"
         comment: "Praat上で選択されている " + string$(num_selected) + " 個の TextGrid を分析します。"
-        positive: "対象のTier番号", 1
-        boolean: "空白ラベルを除外する", 1
-        boolean: "TSVファイルとしても保存する", 0
+        positive: "Tier_number (対象Tier番号)", 1
+        boolean: "Skip_empty_intervals (空白ラベルを除外)", 1
+        boolean: "Save_to_TSV_file (TSVファイルにも保存)", 0
     clicked = endPause: "キャンセル", "分析を実行", 2, 1
     
     if clicked = 1
-        exitScript: "キャンセルされました。"
+        exitScript: "処理がキャンセルされました。"
     endif
     
-    tier_number = 対象のTier番号
-    skip_empty = 空白ラベルを除外する
-    save_tsv = TSVファイルとしても保存する
+    tier_number = tier_number
+    skip_empty = skip_empty_intervals
+    save_tsv = save_to_TSV_file
     
     tsv_out_file$ = ""
     if save_tsv
@@ -118,7 +118,7 @@ else
     # ==========================================================================
     folder$ = chooseDirectory$: "TextGridファイルが入っているフォルダを選択してください"
     if folder$ = ""
-        exitScript: "キャンセルされました。"
+        exitScript: "処理がキャンセルされました。"
     endif
     
     # パス末尾のセパレータ補正
@@ -130,20 +130,20 @@ else
     
     beginPause: "区間継続時間の計算（フォルダ一括処理）"
         comment: "選択フォルダ: " + folder$
-        positive: "対象のTier番号", 1
-        sentence: "拡張子", ".TextGrid"
-        boolean: "空白ラベルを除外する", 1
-        sentence: "結果保存先ファイル名", default_tsv$
+        positive: "Tier_number (対象Tier番号)", 1
+        sentence: "Extension (対象の拡張子)", ".TextGrid"
+        boolean: "Skip_empty_intervals (空白ラベルを除外)", 1
+        sentence: "Result_file (保存先ファイル名)", default_tsv$
     clicked = endPause: "キャンセル", "一括処理を実行", 2, 1
     
     if clicked = 1
-        exitScript: "キャンセルされました。"
+        exitScript: "処理がキャンセルされました。"
     endif
     
-    tier_number = 対象のTier番号
-    ext$ = 拡張子$
-    skip_empty = 空白ラベルを除外する
-    result_file$ = 結果保存先ファイル名$
+    tier_number = tier_number
+    ext$ = extension$
+    skip_empty = skip_empty_intervals
+    result_file$ = result_file$
     
     echo === フォルダ一括処理を開始します ===
     echo 対象フォルダ: 'folder$'
