@@ -2,10 +2,17 @@
 # スクリプト名: collect_formant_data.praat (フォルマントデータの一括抽出)
 # 
 # 【概要】
-# フォルダ内の音声ファイル（WAV）と TextGrid を読み込み、
-# 指定した段（Tier）の各ラベル区間の中央点（50%地点）における
+# 音声と TextGrid から、指定した段（Tier）の各ラベル区間の中央点（50%地点）における
 # フォルマント周波数（F1〜F5）および帯域幅（B1〜B3）を自動測定します。
-# 結果はタブ区切りテキストファイル（TSV）として保存され、ExcelやRで即座に分析可能です。
+# 
+# 【ハイブリッド機能（パス手動入力不要）】
+# 1. 【選択オブジェクト分析モード】
+#    Praat上で Sound と TextGrid（同名ペア）を選択している場合、
+#    パス指定なしで即座に分析し、画面（Infoウィンドウ）に結果を表示します。
+# 2. 【フォルダ一括処理モード】
+#    Praat上で何も選択していない場合、自動的にマウスで選べる「フォルダ参照ダイアログ」
+#    が起動します。フォルダ内の同名ペアを一括集計し、同じフォルダ内に "formant_results.tsv"
+#    を自動保存します。
 #
 # 【原典クレジット】
 # ベース元: Mietta Lennes (SpeCT: collect_formant_data_from_files.praat)
@@ -13,144 +20,247 @@
 # ライセンス: GNU General Public License v3.0
 # ==============================================================================
 
-form フォルマントデータの一括抽出 (Collect Formant Data)
-    comment === 【フォルダ・出力指定】 ===
-    text sound_dir C:\SpeechData\wav\
-    sentence sound_ext .wav
-    text textgrid_dir C:\SpeechData\tg\
-    sentence textgrid_ext .TextGrid
-    text result_file C:\SpeechData\formant_results.tsv
-
-    comment === 【抽出条件】 ===
-    positive tier_number 1
-    comment 分析対象のTier番号
-    boolean skip_empty_labels 1
-    comment 空白ラベル（無音など）を除外するかどうか
-
-    comment === 【フォルマント分析パラメータ】 ===
-    positive time_step 0.01
-    comment 分析時間ステップ（秒）
-    integer max_num_formants 5
-    comment 抽出する最大フォルマント数
-    positive max_formant_hz 5500
-    comment 最大フォルマント周波数（女性: 5500 Hz, 男性: 5000 Hz, 子供: 8000 Hz）
-    positive window_length 0.025
-    comment 分析窓長（秒）
-    real preemphasis_from 50
-    comment プリエンファシス開始周波数（Hz）
-endform
-
-# パス末尾の補正
-if right$(sound_dir$, 1) <> "/" and right$(sound_dir$, 1) <> "\"
-    sound_dir$ = sound_dir$ + "/"
-endif
-if right$(textgrid_dir$, 1) <> "/" and right$(textgrid_dir$, 1) <> "\"
-    textgrid_dir$ = textgrid_dir$ + "/"
-endif
-
 clearinfo
-echo === フォルマント一括抽出を開始します ===
-echo 入力音声フォルダ: 'sound_dir$'
-echo 入力TextGridフォルダ: 'textgrid_dir$'
-echo 結果出力ファイル: 'result_file$'
-echo 最大フォルマント設定: 'max_formant_hz' Hz
 
-# 既存結果ファイルが存在する場合は上書き確認
-if fileReadable(result_file$)
-    deleteFile: result_file$
-endif
+# 選択中のオブジェクト数を確認
+num_sound = numberOfSelected("Sound")
+num_tg = numberOfSelected("TextGrid")
 
-# ヘッダー行を出力
-title_line$ = "Filename" + tab$ + "IntervalIndex" + tab$ + "Label" + tab$ + "StartTime_s" + tab$ + "EndTime_s" + tab$ + "Duration_ms" + tab$ + "MidTime_s" + tab$ + "F1_Hz" + tab$ + "F2_Hz" + tab$ + "F3_Hz" + tab$ + "F4_Hz" + tab$ + "F5_Hz" + tab$ + "B1_Hz" + tab$ + "B2_Hz" + tab$ + "B3_Hz" + newline$
-writeFile: result_file$, title_line$
-
-file_list = Create Strings as file list: "fileList", sound_dir$ + "*" + sound_ext$
-num_files = Get number of strings
-
-if num_files = 0
-    removeObject: file_list
-    exitScript: "【エラー】対象フォルダに対象の音声ファイル（*" + sound_ext$ + "）が見つかりませんでした。"
-endif
-
-total_measurements = 0
-
-for i to num_files
-    selectObject: file_list
-    filename$ = Get string: i
-    basename$ = filename$ - sound_ext$
+if num_sound > 0 and num_tg > 0
+    # ==========================================================================
+    # 【モード1】Praat上で選択中の Sound と TextGrid を直接分析（パス指定不要）
+    # ==========================================================================
+    beginPause: "フォルマント分析（選択オブジェクト）"
+        comment: "Praat上で選択されている Sound / TextGrid を分析します。"
+        comment: "対象のTier番号（1以上の整数）:"
+        positive: "tier_number", 1
+        comment: "空白ラベル（無音区間など）を除外する:"
+        boolean: "skip_empty_labels", 1
+        comment: "最大フォルマント周波数（女性: 5500, 男性: 5000, 子供: 8000 Hz）:"
+        positive: "max_formant_hz", 5500
+        comment: "最大フォルマント数:"
+        integer: "max_num_formants", 5
+        comment: "結果をTSVファイルとしても保存する:"
+        boolean: "save_to_tsv", 0
+    clicked = endPause: "キャンセル", "分析を実行", 2, 1
     
-    tg_path$ = textgrid_dir$ + basename$ + textgrid_ext$
-    sound_path$ = sound_dir$ + filename$
+    if clicked = 1
+        exitScript: "処理がキャンセルされました。"
+    endif
     
-    if fileReadable(tg_path$)
-        sound = Read from file: sound_path$
-        tg = Read from file: tg_path$
-        
-        # フォルマントオブジェクトの作成 (To Formant (burg))
-        selectObject: sound
-        formant = To Formant (burg): time_step, max_num_formants, max_formant_hz, window_length, preemphasis_from
-        
-        selectObject: tg
-        num_tiers = Get number of tiers
-        
-        if tier_number <= num_tiers
-            is_interval = Is interval tier: tier_number
-            if is_interval
-                num_intervals = Get number of intervals: tier_number
+    target_tier = tier_number
+    skip_empty = skip_empty_labels
+    max_f_hz = max_formant_hz
+    max_n_formants = max_num_formants
+    do_save_tsv = save_to_tsv
+    
+    tsv_out_file$ = ""
+    if do_save_tsv
+        tsv_out_file$ = chooseWriteFile$: "保存先のTSVファイル名を指定してください", "formant_results.tsv"
+        if tsv_out_file$ == ""
+            do_save_tsv = 0
+        endif
+    endif
+
+    # 選択されているIDを取得
+    sound_id = selected("Sound", 1)
+    tg_id = selected("TextGrid", 1)
+    
+    selectObject: sound_id
+    sound_name$ = selected$("Sound")
+    
+    # 画面初期化と見出し出力
+    clearinfo
+    header$ = "ObjectName" + tab$ + "IntervalIndex" + tab$ + "Label" + tab$ + "StartTime_s" + tab$ + "EndTime_s" + tab$ + "Duration_ms" + tab$ + "MidTime_s" + tab$ + "F1_Hz" + tab$ + "F2_Hz" + tab$ + "F3_Hz" + tab$ + "F4_Hz" + tab$ + "F5_Hz" + tab$ + "B1_Hz" + tab$ + "B2_Hz" + tab$ + "B3_Hz"
+    appendInfoLine: header$
+    
+    if do_save_tsv and tsv_out_file$ <> ""
+        writeFileLine: tsv_out_file$, header$
+    endif
+    
+    # フォルマント解析オブジェクト作成 (Burg法)
+    selectObject: sound_id
+    formant = To Formant (burg): 0.01, max_n_formants, max_f_hz, 0.025, 50
+    
+    selectObject: tg_id
+    num_tiers = Get number of tiers
+    
+    if target_tier <= num_tiers
+        is_interval = Is interval tier: target_tier
+        if is_interval == 1
+            num_intervals = Get number of intervals: target_tier
+            for j to num_intervals
+                selectObject: tg_id
+                label$ = Get label of interval: target_tier, j
+                start_t = Get start time of interval: target_tier, j
+                end_t = Get end time of interval: target_tier, j
+                duration_s = end_t - start_t
+                mid_t = start_t + (duration_s / 2)
                 
-                for j to num_intervals
-                    selectObject: tg
-                    label$ = Get label of interval: tier_number, j
-                    start_t = Get start time of interval: tier_number, j
-                    end_t = Get end time of interval: tier_number, j
-                    duration = end_t - start_t
-                    mid_t = start_t + (duration / 2)
+                clean_label$ = replace_regex$(label$, "^\s+|\s+$", "", 0)
+                
+                if not (skip_empty and clean_label$ == "")
+                    selectObject: formant
+                    f1 = Get value at time: 1, mid_t, "Hertz", "Linear"
+                    f2 = Get value at time: 2, mid_t, "Hertz", "Linear"
+                    f3 = Get value at time: 3, mid_t, "Hertz", "Linear"
+                    f4 = Get value at time: 4, mid_t, "Hertz", "Linear"
+                    f5 = Get value at time: 5, mid_t, "Hertz", "Linear"
+                    b1 = Get bandwidth at time: 1, mid_t, "Hertz", "Linear"
+                    b2 = Get bandwidth at time: 2, mid_t, "Hertz", "Linear"
+                    b3 = Get bandwidth at time: 3, mid_t, "Hertz", "Linear"
                     
-                    clean_label$ = replace_regex$(label$, "^\s+|\s+$", "", 0)
+                    f1$ = if f1 = undefined then "NA" else fixed$(f1, 2) fi
+                    f2$ = if f2 = undefined then "NA" else fixed$(f2, 2) fi
+                    f3$ = if f3 = undefined then "NA" else fixed$(f3, 2) fi
+                    f4$ = if f4 = undefined then "NA" else fixed$(f4, 2) fi
+                    f5$ = if f5 = undefined then "NA" else fixed$(f5, 2) fi
+                    b1$ = if b1 = undefined then "NA" else fixed$(b1, 2) fi
+                    b2$ = if b2 = undefined then "NA" else fixed$(b2, 2) fi
+                    b3$ = if b3 = undefined then "NA" else fixed$(b3, 2) fi
                     
-                    if not (skip_empty_labels and clean_label$ == "")
-                        # フォルマント値と帯域幅を取得
-                        selectObject: formant
-                        f1 = Get value at time: 1, mid_t, "Hertz", "Linear"
-                        f2 = Get value at time: 2, mid_t, "Hertz", "Linear"
-                        f3 = Get value at time: 3, mid_t, "Hertz", "Linear"
-                        f4 = Get value at time: 4, mid_t, "Hertz", "Linear"
-                        f5 = Get value at time: 5, mid_t, "Hertz", "Linear"
-                        b1 = Get bandwidth at time: 1, mid_t, "Hertz", "Linear"
-                        b2 = Get bandwidth at time: 2, mid_t, "Hertz", "Linear"
-                        b3 = Get bandwidth at time: 3, mid_t, "Hertz", "Linear"
-                        
-                        # 未定義値 (undefined) のフォーマット
-                        f1$ = if f1 = undefined then "NA" else fixed$(f1, 2) fi
-                        f2$ = if f2 = undefined then "NA" else fixed$(f2, 2) fi
-                        f3$ = if f3 = undefined then "NA" else fixed$(f3, 2) fi
-                        f4$ = if f4 = undefined then "NA" else fixed$(f4, 2) fi
-                        f5$ = if f5 = undefined then "NA" else fixed$(f5, 2) fi
-                        b1$ = if b1 = undefined then "NA" else fixed$(b1, 2) fi
-                        b2$ = if b2 = undefined then "NA" else fixed$(b2, 2) fi
-                        b3$ = if b3 = undefined then "NA" else fixed$(b3, 2) fi
-                        
-                        dur_ms = duration * 1000
-                        
-                        # TSV行の生成
-                        row$ = basename$ + tab$ + string$(j) + tab$ + clean_label$ + tab$ + fixed$(start_t, 4) + tab$ + fixed$(end_t, 4) + tab$ + fixed$(dur_ms, 2) + tab$ + fixed$(mid_t, 4) + tab$ + f1$ + tab$ + f2$ + tab$ + f3$ + tab$ + f4$ + tab$ + f5$ + tab$ + b1$ + tab$ + b2$ + tab$ + b3$ + newline$
-                        
-                        appendFile: result_file$, row$
-                        total_measurements = total_measurements + 1
+                    dur_ms = duration_s * 1000
+                    row$ = sound_name$ + tab$ + string$(j) + tab$ + clean_label$ + tab$ + fixed$(start_t, 4) + tab$ + fixed$(end_t, 4) + tab$ + fixed$(dur_ms, 2) + tab$ + fixed$(mid_t, 4) + tab$ + f1$ + tab$ + f2$ + tab$ + f3$ + tab$ + f4$ + tab$ + f5$ + tab$ + b1$ + tab$ + b2$ + tab$ + b3$
+                    appendInfoLine: row$
+                    
+                    if do_save_tsv and tsv_out_file$ <> ""
+                        appendFileLine: tsv_out_file$, row$
                     endif
                 endfor
             endif
         endif
-        
-        removeObject: sound
-        removeObject: tg
-        removeObject: formant
-        echo ['i'/'num_files'] 'basename$': 分析完了
     endif
-endfor
+    
+    removeObject: formant
 
-removeObject: file_list
-
-echo ==============================================
-echo 完了: 合計 'total_measurements' 件のデータを抽出しました。
-echo 出力先: 'result_file$'
+else
+    # ==========================================================================
+    # 【モード2】フォルダ参照ダイアログによる一括処理（パス手打ち不要）
+    # ==========================================================================
+    folder$ = chooseDirectory$: "音声(WAV)とTextGridが入っているフォルダを選択してください"
+    if folder$ == ""
+        exitScript: "処理がキャンセルされました。"
+    endif
+    
+    # パス末尾のセパレータ補正
+    if right$(folder$, 1) <> "/" and right$(folder$, 1) <> "\"
+        folder$ = folder$ + "/"
+    endif
+    
+    default_tsv$ = folder$ + "formant_results.tsv"
+    
+    beginPause: "フォルマント分析（フォルダ一括処理）"
+        comment: "選択フォルダ: " + folder$
+        comment: "対象のTier番号（1以上の整数）:"
+        positive: "tier_number", 1
+        comment: "空白ラベル（無音区間など）を除外する:"
+        boolean: "skip_empty_labels", 1
+        comment: "最大フォルマント周波数（女性: 5500, 男性: 5000, 子供: 8000 Hz）:"
+        positive: "max_formant_hz", 5500
+        comment: "最大フォルマント数:"
+        integer: "max_num_formants", 5
+        comment: "結果保存先のTSVファイル名:"
+        sentence: "result_file", default_tsv$
+    clicked = endPause: "キャンセル", "一括処理を実行", 2, 1
+    
+    if clicked = 1
+        exitScript: "処理がキャンセルされました。"
+    endif
+    
+    target_tier = tier_number
+    skip_empty = skip_empty_labels
+    max_f_hz = max_formant_hz
+    max_n_formants = max_num_formants
+    out_file$ = result_file$
+    
+    if out_file$ == ""
+        out_file$ = default_tsv$
+    endif
+    
+    clearinfo
+    header$ = "Filename" + tab$ + "IntervalIndex" + tab$ + "Label" + tab$ + "StartTime_s" + tab$ + "EndTime_s" + tab$ + "Duration_ms" + tab$ + "MidTime_s" + tab$ + "F1_Hz" + tab$ + "F2_Hz" + tab$ + "F3_Hz" + tab$ + "F4_Hz" + tab$ + "F5_Hz" + tab$ + "B1_Hz" + tab$ + "B2_Hz" + tab$ + "B3_Hz"
+    appendInfoLine: header$
+    writeFileLine: out_file$, header$
+    
+    file_list = Create Strings as file list: "fileList", folder$ + "*.wav"
+    num_files = Get number of strings
+    
+    if num_files = 0
+        removeObject: file_list
+        exitScript: "【エラー】フォルダ内に .wav ファイルが見つかりませんでした: " + folder$
+    endif
+    
+    for i to num_files
+        selectObject: file_list
+        filename$ = Get string: i
+        basename$ = filename$ - ".wav"
+        
+        sound_path$ = folder$ + filename$
+        tg_path$ = folder$ + basename$ + ".TextGrid"
+        
+        # 大文字小文字の対応（.TextGrid または .textgrid）
+        if not fileReadable(tg_path$)
+            tg_path$ = folder$ + basename$ + ".textgrid"
+        endif
+        
+        if fileReadable(tg_path$)
+            sound = Read from file: sound_path$
+            tg = Read from file: tg_path$
+            
+            selectObject: sound
+            formant = To Formant (burg): 0.01, max_n_formants, max_f_hz, 0.025, 50
+            
+            selectObject: tg
+            num_tiers = Get number of tiers
+            
+            if target_tier <= num_tiers
+                is_interval = Is interval tier: target_tier
+                if is_interval == 1
+                    num_intervals = Get number of intervals: target_tier
+                    for j to num_intervals
+                        selectObject: tg
+                        label$ = Get label of interval: target_tier, j
+                        start_t = Get start time of interval: target_tier, j
+                        end_t = Get end time of interval: target_tier, j
+                        duration_s = end_t - start_t
+                        mid_t = start_t + (duration_s / 2)
+                        
+                        clean_label$ = replace_regex$(label$, "^\s+|\s+$", "", 0)
+                        
+                        if not (skip_empty and clean_label$ == "")
+                            selectObject: formant
+                            f1 = Get value at time: 1, mid_t, "Hertz", "Linear"
+                            f2 = Get value at time: 2, mid_t, "Hertz", "Linear"
+                            f3 = Get value at time: 3, mid_t, "Hertz", "Linear"
+                            f4 = Get value at time: 4, mid_t, "Hertz", "Linear"
+                            f5 = Get value at time: 5, mid_t, "Hertz", "Linear"
+                            b1 = Get bandwidth at time: 1, mid_t, "Hertz", "Linear"
+                            b2 = Get bandwidth at time: 2, mid_t, "Hertz", "Linear"
+                            b3 = Get bandwidth at time: 3, mid_t, "Hertz", "Linear"
+                            
+                            f1$ = if f1 = undefined then "NA" else fixed$(f1, 2) fi
+                            f2$ = if f2 = undefined then "NA" else fixed$(f2, 2) fi
+                            f3$ = if f3 = undefined then "NA" else fixed$(f3, 2) fi
+                            f4$ = if f4 = undefined then "NA" else fixed$(f4, 2) fi
+                            f5$ = if f5 = undefined then "NA" else fixed$(f5, 2) fi
+                            b1$ = if b1 = undefined then "NA" else fixed$(b1, 2) fi
+                            b2$ = if b2 = undefined then "NA" else fixed$(b2, 2) fi
+                            b3$ = if b3 = undefined then "NA" else fixed$(b3, 2) fi
+                            
+                            dur_ms = duration_s * 1000
+                            row$ = basename$ + tab$ + string$(j) + tab$ + clean_label$ + tab$ + fixed$(start_t, 4) + tab$ + fixed$(end_t, 4) + tab$ + fixed$(dur_ms, 2) + tab$ + fixed$(mid_t, 4) + tab$ + f1$ + tab$ + f2$ + tab$ + f3$ + tab$ + f4$ + tab$ + f5$ + tab$ + b1$ + tab$ + b2$ + tab$ + b3$
+                            appendInfoLine: row$
+                            appendFileLine: out_file$, row$
+                        endfor
+                    endif
+                endif
+            endif
+            
+            removeObject: sound
+            removeObject: tg
+            removeObject: formant
+        endif
+    endfor
+    
+    removeObject: file_list
+endif

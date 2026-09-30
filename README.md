@@ -27,8 +27,8 @@
 
 | スクリプト名 | やりたいこと / 主な用途 |
 | :--- | :--- |
-| **[`extract_intervals_to_wav.praat`](scripts/segmentation/extract_intervals_to_wav.praat)** | TextGridのラベル区間ごとに、個別のWAVファイルとして一括切り出し保存する |
-| **[`mark_pauses.praat`](scripts/segmentation/mark_pauses.praat)** | 音声の強さ（音量）から無音・ポーズ区間を自動検出し、TextGridに境界線・ラベルを付与する |
+| **[`extract_intervals_to_wav.praat`](scripts/segmentation/extract_intervals_to_wav.praat)** | TextGridのラベル区間ごとに、個別のWAVファイルとして一括切り出し保存する（★**ハイブリッド対応**） |
+| **[`mark_pauses.praat`](scripts/segmentation/mark_pauses.praat)** | 音声の強さ（音量）から無音・ポーズ区間を自動検出し、TextGridに境界線・ラベルを付与する（★**ハイブリッド対応**） |
 
 ---
 
@@ -36,9 +36,9 @@
 
 | スクリプト名 | やりたいこと / 主な用途 |
 | :--- | :--- |
-| **[`collect_formant_data.praat`](scripts/acoustic-analysis/collect_formant_data.praat)** | 各母音区間の中央点におけるフォルマント（F1〜F5）と帯域幅を一括測定し、TSVに出力する |
-| **[`collect_pitch_data.praat`](scripts/acoustic-analysis/collect_pitch_data.praat)** | 各区間のピッチ（F0）の平均値・中央値・最大/最小値・標準偏差を一括集計する |
-| **[`calculate_segment_durations.praat`](scripts/acoustic-analysis/calculate_segment_durations.praat)** | 各区間の開始時刻・終了時刻・継続時間（秒/ミリ秒）を一覧集計する（★**選択中オブジェクト即実行 / フォルダ参照ダイアログのハイブリッド対応**） |
+| **[`collect_formant_data.praat`](scripts/acoustic-analysis/collect_formant_data.praat)** | 各母音区間の中央点におけるフォルマント（F1〜F5）と帯域幅を一括測定し、TSVに出力する（★**ハイブリッド対応**） |
+| **[`collect_pitch_data.praat`](scripts/acoustic-analysis/collect_pitch_data.praat)** | 各区間のピッチ（F0）の平均値・中央値・最大/最小値・標準偏差を一括集計する（★**ハイブリッド対応**） |
+| **[`calculate_segment_durations.praat`](scripts/acoustic-analysis/calculate_segment_durations.praat)** | 各区間の開始時刻・終了時刻・継続時間（秒/ミリ秒）を一覧集計する（★**ハイブリッド対応 / TextGrid書き込み対応**） |
 
 ---
 
@@ -61,11 +61,15 @@
 
 ### 🌐 Google Colab 版（ブラウザで即実行可能）
 
-Praat をインストールしていない環境でも、ブラウザ上のファイル選択ダイアログから実行できる Google Colab ノートブックです。Praat の C++ エンジン（Parselmouth）を使用しているため、**Praat 本体と 100% 同一の結果**が得られます。
+Praat をインストールしていない環境でも、ブラウザ上のファイル選択ダイアログから実行できる Google Colab ノートブック群です。Praat の C++ コアエンジン（`praat-parselmouth`）を使用しているため、**Praat 本体と 100% 同一の結果**が得られます。
 
 | ノートブック名 | リンク / 実行 | 概要 |
 | :--- | :--- | :--- |
 | **区間継続時間の計算** | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/okawawaka/praat-scripts-ja/blob/main/notebooks/calculate_segment_durations.ipynb) | ダイアログで TextGrid を選択し、継続時間（秒/ms）を一覧集計して TSV をダウンロード |
+| **フォルマント一括抽出** | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/okawawaka/praat-scripts-ja/blob/main/notebooks/collect_formant_data.ipynb) | 音声とTextGridから各区間中央点のF1〜F5および帯域幅を一括測定して TSV をダウンロード |
+| **ピッチ（F0）統計一括抽出** | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/okawawaka/praat-scripts-ja/blob/main/notebooks/collect_pitch_data.ipynb) | 音声とTextGridから各区間の平均・中央値・最大/最小ピッチを測定して TSV をダウンロード |
+| **音声区間の一括切り出し** | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/okawawaka/praat-scripts-ja/blob/main/notebooks/extract_intervals_to_wav.ipynb) | TextGridの区間ラベルに従ってWAVを一括切り出しし、ZIPアーカイブで一括ダウンロード |
+| **無音・ポーズの自動検出** | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/okawawaka/praat-scripts-ja/blob/main/notebooks/mark_pauses.ipynb) | 音声(WAV)から無音・ポーズ区間を自動検出し、生成されたTextGridをZIPで一括ダウンロード |
 
 ---
 
