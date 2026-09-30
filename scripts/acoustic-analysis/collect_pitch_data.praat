@@ -27,6 +27,27 @@ clearinfo
 num_sound = numberOfSelected("Sound")
 num_tg = numberOfSelected("TextGrid")
 
+# どちらか片方だけ選ばれている場合の同名オブジェクト自動補完
+if num_sound > 0 and num_tg == 0
+    sound_id = selected("Sound", 1)
+    selectObject: sound_id
+    sound_name$ = selected$("Sound")
+    matching_tg = Find Object: "TextGrid " + sound_name$
+    if matching_tg > 0
+        plusObject: sound_id
+        num_tg = 1
+    endif
+elsif num_tg > 0 and num_sound == 0
+    tg_id = selected("TextGrid", 1)
+    selectObject: tg_id
+    tg_name$ = selected$("TextGrid")
+    matching_sound = Find Object: "Sound " + tg_name$
+    if matching_sound > 0
+        plusObject: tg_id
+        num_sound = 1
+    endif
+endif
+
 if num_sound > 0 and num_tg > 0
     # ==========================================================================
     # 【モード1】Praat上で選択中の Sound と TextGrid を直接分析（パス指定不要）
@@ -35,8 +56,8 @@ if num_sound > 0 and num_tg > 0
         comment: "Praat上で選択されている Sound / TextGrid を分析します。"
         comment: "対象のTier番号（1以上の整数）:"
         positive: "tier_number", 1
-        comment: "空白ラベル（無音区間など）を除外する:"
-        boolean: "skip_empty_labels", 1
+        comment: "空白ラベル（無音区間など）を除外する（チェックを外すと全区間を測定）:"
+        boolean: "skip_empty_labels", 0
         comment: "ピッチ探索下限（男性: 75, 女性・子供: 100 Hz）:"
         positive: "pitch_floor_hz", 75.0
         comment: "ピッチ探索上限（男性: 300, 女性・子供: 500〜600 Hz）:"
@@ -97,7 +118,12 @@ if num_sound > 0 and num_tg > 0
                 
                 clean_label$ = replace_regex$(label$, "^\s+|\s+$", "", 0)
                 
-                if not (skip_empty and clean_label$ == "")
+                should_skip = 0
+                if skip_empty = 1 and clean_label$ = ""
+                    should_skip = 1
+                endif
+                
+                if should_skip = 0
                     selectObject: pitch
                     mean_f0 = Get mean: start_t, end_t, "Hertz"
                     median_f0 = Get quantile: start_t, end_t, 0.5, "Hertz"
@@ -105,11 +131,35 @@ if num_sound > 0 and num_tg > 0
                     max_f0 = Get maximum: start_t, end_t, "Hertz", "Parabolic"
                     stdev_f0 = Get standard deviation: start_t, end_t, "Hertz"
                     
-                    mean_str$ = if mean_f0 = undefined then "NA" else fixed$(mean_f0, 2) fi
-                    med_str$ = if median_f0 = undefined then "NA" else fixed$(median_f0, 2) fi
-                    min_str$ = if min_f0 = undefined then "NA" else fixed$(min_f0, 2) fi
-                    max_str$ = if max_f0 = undefined then "NA" else fixed$(max_f0, 2) fi
-                    std_str$ = if stdev_f0 = undefined then "NA" else fixed$(stdev_f0, 2) fi
+                    if mean_f0 = undefined
+                        mean_str$ = "NA"
+                    else
+                        mean_str$ = fixed$(mean_f0, 2)
+                    endif
+                    
+                    if median_f0 = undefined
+                        med_str$ = "NA"
+                    else
+                        med_str$ = fixed$(median_f0, 2)
+                    endif
+                    
+                    if min_f0 = undefined
+                        min_str$ = "NA"
+                    else
+                        min_str$ = fixed$(min_f0, 2)
+                    endif
+                    
+                    if max_f0 = undefined
+                        max_str$ = "NA"
+                    else
+                        max_str$ = fixed$(max_f0, 2)
+                    endif
+                    
+                    if stdev_f0 = undefined
+                        std_str$ = "NA"
+                    else
+                        std_str$ = fixed$(stdev_f0, 2)
+                    endif
                     
                     dur_ms = duration_s * 1000
                     row$ = sound_name$ + tab$ + string$(j) + tab$ + clean_label$ + tab$ + fixed$(start_t, 4) + tab$ + fixed$(end_t, 4) + tab$ + fixed$(dur_ms, 2) + tab$ + mean_str$ + tab$ + med_str$ + tab$ + min_str$ + tab$ + max_str$ + tab$ + std_str$
@@ -118,9 +168,13 @@ if num_sound > 0 and num_tg > 0
                     if do_save_tsv and tsv_out_file$ <> ""
                         appendFileLine: tsv_out_file$, row$
                     endif
-                endfor
-            endif
+                endif
+            endfor
+        else
+            echo 【注意】 選択された段はインターバル段ではありません。
         endif
+    else
+        echo 【注意】 指定されたTier番号が存在しません（総段数: 'num_tiers'）。
     endif
     
     removeObject: pitch
@@ -145,8 +199,8 @@ else
         comment: "選択フォルダ: " + folder$
         comment: "対象のTier番号（1以上の整数）:"
         positive: "tier_number", 1
-        comment: "空白ラベル（無音区間など）を除外する:"
-        boolean: "skip_empty_labels", 1
+        comment: "空白ラベル（無音区間など）を除外する（チェックを外すと全区間を測定）:"
+        boolean: "skip_empty_labels", 0
         comment: "ピッチ探索下限（男性: 75, 女性・子供: 100 Hz）:"
         positive: "pitch_floor_hz", 75.0
         comment: "ピッチ探索上限（男性: 300, 女性・子供: 500〜600 Hz）:"
@@ -217,7 +271,12 @@ else
                         
                         clean_label$ = replace_regex$(label$, "^\s+|\s+$", "", 0)
                         
-                        if not (skip_empty and clean_label$ == "")
+                        should_skip = 0
+                        if skip_empty = 1 and clean_label$ = ""
+                            should_skip = 1
+                        endif
+                        
+                        if should_skip = 0
                             selectObject: pitch
                             mean_f0 = Get mean: start_t, end_t, "Hertz"
                             median_f0 = Get quantile: start_t, end_t, 0.5, "Hertz"
@@ -225,18 +284,42 @@ else
                             max_f0 = Get maximum: start_t, end_t, "Hertz", "Parabolic"
                             stdev_f0 = Get standard deviation: start_t, end_t, "Hertz"
                             
-                            mean_str$ = if mean_f0 = undefined then "NA" else fixed$(mean_f0, 2) fi
-                            med_str$ = if median_f0 = undefined then "NA" else fixed$(median_f0, 2) fi
-                            min_str$ = if min_f0 = undefined then "NA" else fixed$(min_f0, 2) fi
-                            max_str$ = if max_f0 = undefined then "NA" else fixed$(max_f0, 2) fi
-                            std_str$ = if stdev_f0 = undefined then "NA" else fixed$(stdev_f0, 2) fi
+                            if mean_f0 = undefined
+                                mean_str$ = "NA"
+                            else
+                                mean_str$ = fixed$(mean_f0, 2)
+                            endif
+                            
+                            if median_f0 = undefined
+                                med_str$ = "NA"
+                            else
+                                med_str$ = fixed$(median_f0, 2)
+                            endif
+                            
+                            if min_f0 = undefined
+                                min_str$ = "NA"
+                            else
+                                min_str$ = fixed$(min_f0, 2)
+                            endif
+                            
+                            if max_f0 = undefined
+                                max_str$ = "NA"
+                            else
+                                max_str$ = fixed$(max_f0, 2)
+                            endif
+                            
+                            if stdev_f0 = undefined
+                                std_str$ = "NA"
+                            else
+                                std_str$ = fixed$(stdev_f0, 2)
+                            endif
                             
                             dur_ms = duration_s * 1000
                             row$ = basename$ + tab$ + string$(j) + tab$ + clean_label$ + tab$ + fixed$(start_t, 4) + tab$ + fixed$(end_t, 4) + tab$ + fixed$(dur_ms, 2) + tab$ + mean_str$ + tab$ + med_str$ + tab$ + min_str$ + tab$ + max_str$ + tab$ + std_str$
                             appendInfoLine: row$
                             appendFileLine: out_file$, row$
-                        endfor
-                    endif
+                        endif
+                    endfor
                 endif
             endif
             

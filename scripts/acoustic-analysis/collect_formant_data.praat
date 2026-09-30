@@ -7,7 +7,7 @@
 # 
 # 【ハイブリッド機能（パス手動入力不要）】
 # 1. 【選択オブジェクト分析モード】
-#    Praat上で Sound と TextGrid（同名ペア）を選択している場合、
+#    Praat上で Sound と TextGrid を選択している場合、
 #    パス指定なしで即座に分析し、画面（Infoウィンドウ）に結果を表示します。
 # 2. 【フォルダ一括処理モード】
 #    Praat上で何も選択していない場合、自動的にマウスで選べる「フォルダ参照ダイアログ」
@@ -26,6 +26,27 @@ clearinfo
 num_sound = numberOfSelected("Sound")
 num_tg = numberOfSelected("TextGrid")
 
+# どちらか片方だけ選ばれている場合の同名オブジェクト自動補完
+if num_sound > 0 and num_tg == 0
+    sound_id = selected("Sound", 1)
+    selectObject: sound_id
+    sound_name$ = selected$("Sound")
+    matching_tg = Find Object: "TextGrid " + sound_name$
+    if matching_tg > 0
+        plusObject: sound_id
+        num_tg = 1
+    endif
+elsif num_tg > 0 and num_sound == 0
+    tg_id = selected("TextGrid", 1)
+    selectObject: tg_id
+    tg_name$ = selected$("TextGrid")
+    matching_sound = Find Object: "Sound " + tg_name$
+    if matching_sound > 0
+        plusObject: tg_id
+        num_sound = 1
+    endif
+endif
+
 if num_sound > 0 and num_tg > 0
     # ==========================================================================
     # 【モード1】Praat上で選択中の Sound と TextGrid を直接分析（パス指定不要）
@@ -34,8 +55,8 @@ if num_sound > 0 and num_tg > 0
         comment: "Praat上で選択されている Sound / TextGrid を分析します。"
         comment: "対象のTier番号（1以上の整数）:"
         positive: "tier_number", 1
-        comment: "空白ラベル（無音区間など）を除外する:"
-        boolean: "skip_empty_labels", 1
+        comment: "空白ラベル（無音区間など）を除外する（チェックを外すと全区間を測定）:"
+        boolean: "skip_empty_labels", 0
         comment: "最大フォルマント周波数（女性: 5500, 男性: 5000, 子供: 8000 Hz）:"
         positive: "max_formant_hz", 5500
         comment: "最大フォルマント数:"
@@ -62,14 +83,12 @@ if num_sound > 0 and num_tg > 0
         endif
     endif
 
-    # 選択されているIDを取得
     sound_id = selected("Sound", 1)
     tg_id = selected("TextGrid", 1)
     
     selectObject: sound_id
     sound_name$ = selected$("Sound")
     
-    # 画面初期化と見出し出力
     clearinfo
     header$ = "ObjectName" + tab$ + "IntervalIndex" + tab$ + "Label" + tab$ + "StartTime_s" + tab$ + "EndTime_s" + tab$ + "Duration_ms" + tab$ + "MidTime_s" + tab$ + "F1_Hz" + tab$ + "F2_Hz" + tab$ + "F3_Hz" + tab$ + "F4_Hz" + tab$ + "F5_Hz" + tab$ + "B1_Hz" + tab$ + "B2_Hz" + tab$ + "B3_Hz"
     appendInfoLine: header$
@@ -99,7 +118,12 @@ if num_sound > 0 and num_tg > 0
                 
                 clean_label$ = replace_regex$(label$, "^\s+|\s+$", "", 0)
                 
-                if not (skip_empty and clean_label$ == "")
+                should_skip = 0
+                if skip_empty = 1 and clean_label$ = ""
+                    should_skip = 1
+                endif
+                
+                if should_skip = 0
                     selectObject: formant
                     f1 = Get value at time: 1, mid_t, "Hertz", "Linear"
                     f2 = Get value at time: 2, mid_t, "Hertz", "Linear"
@@ -110,14 +134,48 @@ if num_sound > 0 and num_tg > 0
                     b2 = Get bandwidth at time: 2, mid_t, "Hertz", "Linear"
                     b3 = Get bandwidth at time: 3, mid_t, "Hertz", "Linear"
                     
-                    f1$ = if f1 = undefined then "NA" else fixed$(f1, 2) fi
-                    f2$ = if f2 = undefined then "NA" else fixed$(f2, 2) fi
-                    f3$ = if f3 = undefined then "NA" else fixed$(f3, 2) fi
-                    f4$ = if f4 = undefined then "NA" else fixed$(f4, 2) fi
-                    f5$ = if f5 = undefined then "NA" else fixed$(f5, 2) fi
-                    b1$ = if b1 = undefined then "NA" else fixed$(b1, 2) fi
-                    b2$ = if b2 = undefined then "NA" else fixed$(b2, 2) fi
-                    b3$ = if b3 = undefined then "NA" else fixed$(b3, 2) fi
+                    # undefined の安全な文字列化
+                    f1$ = if f1 = undefined then "NA" else fixed$(f1, 2) endif
+                    if f1 = undefined
+                        f1$ = "NA"
+                    else
+                        f1$ = fixed$(f1, 2)
+                    endif
+                    if f2 = undefined
+                        f2$ = "NA"
+                    else
+                        f2$ = fixed$(f2, 2)
+                    endif
+                    if f3 = undefined
+                        f3$ = "NA"
+                    else
+                        f3$ = fixed$(f3, 2)
+                    endif
+                    if f4 = undefined
+                        f4$ = "NA"
+                    else
+                        f4$ = fixed$(f4, 2)
+                    endif
+                    if f5 = undefined
+                        f5$ = "NA"
+                    else
+                        f5$ = fixed$(f5, 2)
+                    endif
+                    if b1 = undefined
+                        b1$ = "NA"
+                    else
+                        b1$ = fixed$(b1, 2)
+                    endif
+                    if b2 = undefined
+                        b2$ = "NA"
+                    else
+                        b2$ = fixed$(b2, 2)
+                    endif
+                    if b3 = undefined
+                        b3$ = "NA"
+                    else
+                        b3$ = fixed$(b3, 2)
+                    endif
                     
                     dur_ms = duration_s * 1000
                     row$ = sound_name$ + tab$ + string$(j) + tab$ + clean_label$ + tab$ + fixed$(start_t, 4) + tab$ + fixed$(end_t, 4) + tab$ + fixed$(dur_ms, 2) + tab$ + fixed$(mid_t, 4) + tab$ + f1$ + tab$ + f2$ + tab$ + f3$ + tab$ + f4$ + tab$ + f5$ + tab$ + b1$ + tab$ + b2$ + tab$ + b3$
@@ -126,9 +184,13 @@ if num_sound > 0 and num_tg > 0
                     if do_save_tsv and tsv_out_file$ <> ""
                         appendFileLine: tsv_out_file$, row$
                     endif
-                endfor
-            endif
+                endif
+            endfor
+        else
+            echo 【注意】 選択された段はインターバル段ではありません。
         endif
+    else
+        echo 【注意】 指定されたTier番号が存在しません（総段数: 'num_tiers'）。
     endif
     
     removeObject: formant
@@ -142,7 +204,6 @@ else
         exitScript: "処理がキャンセルされました。"
     endif
     
-    # パス末尾のセパレータ補正
     if right$(folder$, 1) <> "/" and right$(folder$, 1) <> "\"
         folder$ = folder$ + "/"
     endif
@@ -153,8 +214,8 @@ else
         comment: "選択フォルダ: " + folder$
         comment: "対象のTier番号（1以上の整数）:"
         positive: "tier_number", 1
-        comment: "空白ラベル（無音区間など）を除外する:"
-        boolean: "skip_empty_labels", 1
+        comment: "空白ラベル（無音区間など）を除外する（チェックを外すと全区間を測定）:"
+        boolean: "skip_empty_labels", 0
         comment: "最大フォルマント周波数（女性: 5500, 男性: 5000, 子供: 8000 Hz）:"
         positive: "max_formant_hz", 5500
         comment: "最大フォルマント数:"
@@ -198,7 +259,6 @@ else
         sound_path$ = folder$ + filename$
         tg_path$ = folder$ + basename$ + ".TextGrid"
         
-        # 大文字小文字の対応（.TextGrid または .textgrid）
         if not fileReadable(tg_path$)
             tg_path$ = folder$ + basename$ + ".textgrid"
         endif
@@ -227,7 +287,12 @@ else
                         
                         clean_label$ = replace_regex$(label$, "^\s+|\s+$", "", 0)
                         
-                        if not (skip_empty and clean_label$ == "")
+                        should_skip = 0
+                        if skip_empty = 1 and clean_label$ = ""
+                            should_skip = 1
+                        endif
+                        
+                        if should_skip = 0
                             selectObject: formant
                             f1 = Get value at time: 1, mid_t, "Hertz", "Linear"
                             f2 = Get value at time: 2, mid_t, "Hertz", "Linear"
@@ -238,21 +303,53 @@ else
                             b2 = Get bandwidth at time: 2, mid_t, "Hertz", "Linear"
                             b3 = Get bandwidth at time: 3, mid_t, "Hertz", "Linear"
                             
-                            f1$ = if f1 = undefined then "NA" else fixed$(f1, 2) fi
-                            f2$ = if f2 = undefined then "NA" else fixed$(f2, 2) fi
-                            f3$ = if f3 = undefined then "NA" else fixed$(f3, 2) fi
-                            f4$ = if f4 = undefined then "NA" else fixed$(f4, 2) fi
-                            f5$ = if f5 = undefined then "NA" else fixed$(f5, 2) fi
-                            b1$ = if b1 = undefined then "NA" else fixed$(b1, 2) fi
-                            b2$ = if b2 = undefined then "NA" else fixed$(b2, 2) fi
-                            b3$ = if b3 = undefined then "NA" else fixed$(b3, 2) fi
+                            if f1 = undefined
+                                f1$ = "NA"
+                            else
+                                f1$ = fixed$(f1, 2)
+                            endif
+                            if f2 = undefined
+                                f2$ = "NA"
+                            else
+                                f2$ = fixed$(f2, 2)
+                            endif
+                            if f3 = undefined
+                                f3$ = "NA"
+                            else
+                                f3$ = fixed$(f3, 2)
+                            endif
+                            if f4 = undefined
+                                f4$ = "NA"
+                            else
+                                f4$ = fixed$(f4, 2)
+                            endif
+                            if f5 = undefined
+                                f5$ = "NA"
+                            else
+                                f5$ = fixed$(f5, 2)
+                            endif
+                            if b1 = undefined
+                                b1$ = "NA"
+                            else
+                                b1$ = fixed$(b1, 2)
+                            endif
+                            if b2 = undefined
+                                b2$ = "NA"
+                            else
+                                b2$ = fixed$(b2, 2)
+                            endif
+                            if b3 = undefined
+                                b3$ = "NA"
+                            else
+                                b3$ = fixed$(b3, 2)
+                            endif
                             
                             dur_ms = duration_s * 1000
                             row$ = basename$ + tab$ + string$(j) + tab$ + clean_label$ + tab$ + fixed$(start_t, 4) + tab$ + fixed$(end_t, 4) + tab$ + fixed$(dur_ms, 2) + tab$ + fixed$(mid_t, 4) + tab$ + f1$ + tab$ + f2$ + tab$ + f3$ + tab$ + f4$ + tab$ + f5$ + tab$ + b1$ + tab$ + b2$ + tab$ + b3$
                             appendInfoLine: row$
                             appendFileLine: out_file$, row$
-                        endfor
-                    endif
+                        endif
+                    endfor
                 endif
             endif
             
