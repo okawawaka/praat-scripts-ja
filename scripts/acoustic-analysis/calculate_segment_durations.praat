@@ -3,17 +3,15 @@
 # 
 # 【概要】
 # TextGrid の指定した段（Tier）の各区間の開始時刻、終了時刻、継続時間（秒およびミリ秒）を一覧集計します。
-# 母音の長短、子音の閉鎖持続時間（VOT）、ポーズ長の音響分析に最適です。
+# 
+# 【2大出力機能】
+# 1. 【TSV・画面出力】: 全区間の継続時間（秒・ミリ秒）を一覧表としてInfo画面およびTSVに出力
+# 2. 【TextGridへの書き込み】: 各区間の継続時間数値（例: "145.2 ms"）を、TextGrid内に新しいTier
+#    （duration段）として直接書き込み・保存！Praat上で波形を見ながら数値を確認できます。
 #
-# 【ハイブリッド機能（簡単ファイル選択）】
-# 1. 【オブジェクト分析モード】
-#    Praat上で TextGrid を選択（反転表示）している場合、フォルダ指定なしで
-#    選択中の TextGrid を即座に分析し、画面（Infoウィンドウ）に結果を表示します。
-#    必要に応じてTSVファイルへの保存も可能です。
-# 2. 【フォルダ一括処理モード】
-#    Praat上で何も選択していない場合、自動的にマウスで選べる「フォルダ参照ダイアログ」
-#    が起動します。パスの手打ち入力不要で、フォルダ内の全ファイルを一括集計し、
-#    同じフォルダ内に "duration_results.tsv" を自動保存します。
+# 【ハイブリッド機能】
+# - Praat上でTextGridを選択中 $\to$ 選択中のオブジェクトを即座に分析
+# - Praat上で未選択 $\to$ 自動でフォルダ参照ダイアログが起動して一括処理
 #
 # 【原典クレジット】
 # ベース元: Mietta Lennes (SpeCT: calculate_segment_durations.praat)
@@ -34,8 +32,10 @@ if num_selected > 0
         comment: "Praat上で選択されている " + string$(num_selected) + " 個の TextGrid を分析します。"
         comment: "対象のTier番号（1以上の整数）:"
         positive: "tier_number", 1
-        comment: "空白ラベル（無音区間など）を除外する:"
-        boolean: "skip_empty_intervals", 1
+        comment: "空白ラベル（無音区間など）を除外する（チェックを外すと全区間を測定）:"
+        boolean: "skip_empty_intervals", 0
+        comment: "TextGrid内に継続時間のTierを追加して書き込む:"
+        boolean: "write_to_textgrid", 1
         comment: "結果をTSVファイルとしても保存する:"
         boolean: "save_to_tsv", 0
     clicked = endPause: "キャンセル", "分析を実行", 2, 1
@@ -44,9 +44,9 @@ if num_selected > 0
         exitScript: "処理がキャンセルされました。"
     endif
     
-    # 変数の取得
     target_tier = tier_number
     skip_empty = skip_empty_intervals
+    do_write_tg = write_to_textgrid
     do_save_tsv = save_to_tsv
     
     tsv_out_file$ = ""
@@ -84,8 +84,18 @@ if num_selected > 0
         
         num_tiers = Get number of tiers
         if target_tier <= num_tiers
-            if Is interval tier: target_tier
+            is_interval = Is interval tier: target_tier
+            if is_interval == 1
                 num_intervals = Get number of intervals: target_tier
+                
+                # TextGrid書き込み用の新しいTierを末尾に追加
+                if do_write_tg
+                    selectObject: current_tg
+                    dur_tier_idx = num_tiers + 1
+                    tier_label$ = "dur_t" + string$(target_tier) + "_ms"
+                    Insert interval tier: dur_tier_idx, tier_label$
+                endif
+                
                 for j to num_intervals
                     selectObject: current_tg
                     label$ = Get label of interval: target_tier, j
@@ -94,14 +104,46 @@ if num_selected > 0
                     dur_s = end_t - start_t
                     dur_ms = dur_s * 1000
                     
+                    # 数値フォーマット（確実に数値を生成）
+                    start_str$ = fixed$(start_t, 4)
+                    end_str$ = fixed$(end_t, 4)
+                    dur_s_str$ = fixed$(dur_s, 4)
+                    dur_ms_str$ = fixed$(dur_ms, 2)
+                    
                     clean_label$ = replace_regex$(label$, "^\s+|\s+$", "", 0)
+                    
                     if not (skip_empty and clean_label$ == "")
-                        row$ = name$ + tab$ + string$(j) + tab$ + clean_label$ + tab$ + fixed$(start_t, 4) + tab$ + fixed$(end_t, 4) + tab$ + fixed$(dur_s, 4) + tab$ + fixed$(dur_ms, 2)
+                        row$ = name$ + tab$ + string$(j) + tab$ + clean_label$ + tab$ + start_str$ + tab$ + end_str$ + tab$ + dur_s_str$ + tab$ + dur_ms_str$
                         echo 'row$'
+                        
                         if do_save_tsv and tsv_out_file$ <> ""
                             appendFileLine: tsv_out_file$, row$
                         endif
                         total_intervals = total_intervals + 1
+                        
+                        # TextGridに継続時間(ms)を書き込む
+                        if do_write_tg
+                            selectObject: current_tg
+                            if start_t > 0
+                                # 境界が存在しない場合のみ追加
+                                int_at_start = Get interval at time: dur_tier_idx, start_t
+                                int_start_time = Get start time of interval: dur_tier_idx, int_at_start
+                                if abs(int_start_time - start_t) > 0.0001
+                                    Insert boundary: dur_tier_idx, start_t
+                                endif
+                            endif
+                            if end_t < Get total duration
+                                int_at_end = Get interval at time: dur_tier_idx, end_t
+                                int_end_time = Get end time of interval: dur_tier_idx, int_at_end
+                                if abs(int_end_time - end_t) > 0.0001
+                                    Insert boundary: dur_tier_idx, end_t
+                                endif
+                            endif
+                            # 区間中央にラベルを設定
+                            mid_t = (start_t + end_t) / 2
+                            target_int = Get interval at time: dur_tier_idx, mid_t
+                            Set interval text: dur_tier_idx, target_int, dur_ms_str$ + "ms"
+                        endif
                     endif
                 endfor
             else
@@ -115,6 +157,9 @@ if num_selected > 0
     printline
     echo ==============================================
     echo 完了: 合計 'total_intervals' 件の区間時間を集計しました。
+    if do_write_tg
+        echo 【案内】TextGridオブジェクトに継続時間の段（dur_..._ms）を追加しました。PraatでView & Editを開いてご確認ください。
+    endif
     if do_save_tsv and tsv_out_file$ <> ""
         echo TSV保存先: 'tsv_out_file$'
     endif
@@ -141,8 +186,10 @@ else
         positive: "tier_number", 1
         comment: "対象ファイルの拡張子:"
         sentence: "extension", ".TextGrid"
-        comment: "空白ラベル（無音区間など）を除外する:"
-        boolean: "skip_empty_intervals", 1
+        comment: "空白ラベル（無音区間など）を除外する（チェックを外すと全区間を測定）:"
+        boolean: "skip_empty_intervals", 0
+        comment: "TextGridファイル自体にも継続時間Tierを追加・上書き保存する:"
+        boolean: "write_to_textgrid", 0
         comment: "結果保存先のTSVファイル名:"
         sentence: "result_file", default_tsv$
     clicked = endPause: "キャンセル", "一括処理を実行", 2, 1
@@ -154,9 +201,9 @@ else
     target_tier = tier_number
     ext$ = extension$
     skip_empty = skip_empty_intervals
+    do_write_tg = write_to_textgrid
     out_file$ = result_file$
     
-    # 出力パスが空の場合は自動でデフォルト設定
     if out_file$ == ""
         out_file$ = default_tsv$
     endif
@@ -184,13 +231,23 @@ else
         filename$ = Get string: i
         basename$ = filename$ - ext$
         
-        tg = Read from file: folder$ + filename$
+        tg_path$ = folder$ + filename$
+        tg = Read from file: tg_path$
         selectObject: tg
         num_tiers = Get number of tiers
         
         if target_tier <= num_tiers
-            if Is interval tier: target_tier
+            is_interval = Is interval tier: target_tier
+            if is_interval == 1
                 num_intervals = Get number of intervals: target_tier
+                
+                if do_write_tg
+                    selectObject: tg
+                    dur_tier_idx = num_tiers + 1
+                    tier_label$ = "dur_t" + string$(target_tier) + "_ms"
+                    Insert interval tier: dur_tier_idx, tier_label$
+                endif
+                
                 for j to num_intervals
                     selectObject: tg
                     label$ = Get label of interval: target_tier, j
@@ -199,13 +256,46 @@ else
                     dur_s = end_t - start_t
                     dur_ms = dur_s * 1000
                     
+                    start_str$ = fixed$(start_t, 4)
+                    end_str$ = fixed$(end_t, 4)
+                    dur_s_str$ = fixed$(dur_s, 4)
+                    dur_ms_str$ = fixed$(dur_ms, 2)
+                    
                     clean_label$ = replace_regex$(label$, "^\s+|\s+$", "", 0)
+                    
                     if not (skip_empty and clean_label$ == "")
-                        row$ = basename$ + tab$ + string$(j) + tab$ + clean_label$ + tab$ + fixed$(start_t, 4) + tab$ + fixed$(end_t, 4) + tab$ + fixed$(dur_s, 4) + tab$ + fixed$(dur_ms, 2)
+                        row$ = basename$ + tab$ + string$(j) + tab$ + clean_label$ + tab$ + start_str$ + tab$ + end_str$ + tab$ + dur_s_str$ + tab$ + dur_ms_str$
                         appendFileLine: out_file$, row$
                         total_intervals = total_intervals + 1
+                        
+                        if do_write_tg
+                            selectObject: tg
+                            if start_t > 0
+                                int_at_start = Get interval at time: dur_tier_idx, start_t
+                                int_start_time = Get start time of interval: dur_tier_idx, int_at_start
+                                if abs(int_start_time - start_t) > 0.0001
+                                    Insert boundary: dur_tier_idx, start_t
+                                endif
+                            endif
+                            if end_t < Get total duration
+                                int_at_end = Get interval at time: dur_tier_idx, end_t
+                                int_end_time = Get end time of interval: dur_tier_idx, int_at_end
+                                if abs(int_end_time - end_t) > 0.0001
+                                    Insert boundary: dur_tier_idx, end_t
+                                endif
+                            endif
+                            mid_t = (start_t + end_t) / 2
+                            target_int = Get interval at time: dur_tier_idx, mid_t
+                            Set interval text: dur_tier_idx, target_int, dur_ms_str$ + "ms"
+                        endif
                     endif
                 endfor
+                
+                # TextGrid書き込みが有効なら上書き保存
+                if do_write_tg
+                    selectObject: tg
+                    Save as text file: tg_path$
+                endif
             endif
         endif
         
