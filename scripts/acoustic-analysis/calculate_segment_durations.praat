@@ -5,12 +5,14 @@
 # TextGrid の指定した段（Tier）の各区間の開始時刻、終了時刻、継続時間（秒およびミリ秒）を一覧集計します。
 # 
 # 【2大出力機能】
-# 1. 【TSV・画面出力】: 全区間の継続時間（秒・ミリ秒）を一覧表としてInfo画面およびTSVに出力
-# 2. 【TextGridへの書き込み】: 各区間の継続時間数値（例: "145.2 ms"）を、TextGrid内に新しいTier
-#    （duration段）として直接書き込み・保存！Praat上で波形を見ながら数値を確認できます。
+# 1. 【TSV・画面出力】: 全区間の継続時間（秒・ミリ秒）を、指定の見出し付きテーブルとして
+#    Praatの画面（Infoウィンドウ）およびTSVファイルに完全出力します。
+#    そのままExcelやスプレッドシートにコピペ可能です。
+# 2. 【TextGridへの書き込み】: 各区間の継続時間数値（例: "145.20ms"）を、TextGrid内に新しいTier
+#    （duration段）として直接書き込み・保存可能です。
 #
 # 【ハイブリッド機能】
-# - Praat上でTextGridを選択中 $\to$ 選択中のオブジェクトを即座に分析
+# - Praat上でTextGridを選択中 $\to$ 選択中のオブジェクトを即座に分析（パス指定不要）
 # - Praat上で未選択 $\to$ 自動でフォルダ参照ダイアログが起動して一括処理
 #
 # 【原典クレジット】
@@ -35,7 +37,7 @@ if num_selected > 0
         comment: "空白ラベル（無音区間など）を除外する（チェックを外すと全区間を測定）:"
         boolean: "skip_empty_intervals", 0
         comment: "TextGrid内に継続時間のTierを追加して書き込む:"
-        boolean: "write_to_textgrid", 1
+        boolean: "write_to_textgrid", 0
         comment: "結果をTSVファイルとしても保存する:"
         boolean: "save_to_tsv", 0
     clicked = endPause: "キャンセル", "分析を実行", 2, 1
@@ -54,7 +56,6 @@ if num_selected > 0
         tsv_out_file$ = chooseWriteFile$: "保存先のTSVファイル名を指定してください", "duration_results.tsv"
         if tsv_out_file$ == ""
             do_save_tsv = 0
-            echo 【案内】ファイル保存がキャンセルされたため、画面表示のみ実行します。
         endif
     endif
 
@@ -63,13 +64,10 @@ if num_selected > 0
         tg_id[i] = selected("TextGrid", i)
     endfor
 
-    echo === 区間継続時間の計算結果 ===
-    echo 対象オブジェクト数: 'num_selected' 件
-    echo 対象Tier: 'target_tier'
-    printline
-    
+    # Praat画面の初期化と見出し出力
+    clearinfo
     header$ = "ObjectName" + tab$ + "IntervalIndex" + tab$ + "Label" + tab$ + "StartTime_s" + tab$ + "EndTime_s" + tab$ + "Duration_s" + tab$ + "Duration_ms"
-    echo 'header$'
+    appendInfoLine: header$
     
     if do_save_tsv and tsv_out_file$ <> ""
         writeFileLine: tsv_out_file$, header$
@@ -104,7 +102,6 @@ if num_selected > 0
                     dur_s = end_t - start_t
                     dur_ms = dur_s * 1000
                     
-                    # 数値フォーマット（確実に数値を生成）
                     start_str$ = fixed$(start_t, 4)
                     end_str$ = fixed$(end_t, 4)
                     dur_s_str$ = fixed$(dur_s, 4)
@@ -114,7 +111,7 @@ if num_selected > 0
                     
                     if not (skip_empty and clean_label$ == "")
                         row$ = name$ + tab$ + string$(j) + tab$ + clean_label$ + tab$ + start_str$ + tab$ + end_str$ + tab$ + dur_s_str$ + tab$ + dur_ms_str$
-                        echo 'row$'
+                        appendInfoLine: row$
                         
                         if do_save_tsv and tsv_out_file$ <> ""
                             appendFileLine: tsv_out_file$, row$
@@ -125,7 +122,6 @@ if num_selected > 0
                         if do_write_tg
                             selectObject: current_tg
                             if start_t > 0
-                                # 境界が存在しない場合のみ追加
                                 int_at_start = Get interval at time: dur_tier_idx, start_t
                                 int_start_time = Get start time of interval: dur_tier_idx, int_at_start
                                 if abs(int_start_time - start_t) > 0.0001
@@ -139,30 +135,15 @@ if num_selected > 0
                                     Insert boundary: dur_tier_idx, end_t
                                 endif
                             endif
-                            # 区間中央にラベルを設定
                             mid_t = (start_t + end_t) / 2
                             target_int = Get interval at time: dur_tier_idx, mid_t
                             Set interval text: dur_tier_idx, target_int, dur_ms_str$ + "ms"
                         endif
                     endif
                 endfor
-            else
-                echo 【注意】 'name$' の Tier 'target_tier' はインターバル段ではありません。
             endif
-        else
-            echo 【注意】 'name$' には Tier 'target_tier' が存在しません。
         endif
     endfor
-    
-    printline
-    echo ==============================================
-    echo 完了: 合計 'total_intervals' 件の区間時間を集計しました。
-    if do_write_tg
-        echo 【案内】TextGridオブジェクトに継続時間の段（dur_..._ms）を追加しました。PraatでView & Editを開いてご確認ください。
-    endif
-    if do_save_tsv and tsv_out_file$ <> ""
-        echo TSV保存先: 'tsv_out_file$'
-    endif
 
 else
     # ==========================================================================
@@ -208,12 +189,11 @@ else
         out_file$ = default_tsv$
     endif
     
-    echo === フォルダ一括処理を開始します ===
-    echo 対象フォルダ: 'folder$'
-    echo 対象Tier: 'target_tier'
-    echo 保存先: 'out_file$'
+    # Praat画面の初期化と見出し出力
+    clearinfo
+    header$ = "ObjectName" + tab$ + "IntervalIndex" + tab$ + "Label" + tab$ + "StartTime_s" + tab$ + "EndTime_s" + tab$ + "Duration_s" + tab$ + "Duration_ms"
+    appendInfoLine: header$
     
-    header$ = "Filename" + tab$ + "IntervalIndex" + tab$ + "Label" + tab$ + "StartTime_s" + tab$ + "EndTime_s" + tab$ + "Duration_s" + tab$ + "Duration_ms"
     writeFileLine: out_file$, header$
     
     file_list = Create Strings as file list: "fileList", folder$ + "*" + ext$
@@ -265,6 +245,7 @@ else
                     
                     if not (skip_empty and clean_label$ == "")
                         row$ = basename$ + tab$ + string$(j) + tab$ + clean_label$ + tab$ + start_str$ + tab$ + end_str$ + tab$ + dur_s_str$ + tab$ + dur_ms_str$
+                        appendInfoLine: row$
                         appendFileLine: out_file$, row$
                         total_intervals = total_intervals + 1
                         
@@ -291,7 +272,6 @@ else
                     endif
                 endfor
                 
-                # TextGrid書き込みが有効なら上書き保存
                 if do_write_tg
                     selectObject: tg
                     Save as text file: tg_path$
@@ -300,12 +280,7 @@ else
         endif
         
         removeObject: tg
-        echo ['i'/'num_files'] 'basename$': 集計完了
     endfor
     
     removeObject: file_list
-    
-    echo ==============================================
-    echo 完了: 合計 'total_intervals' 件の区間時間を集計しました。
-    echo 保存先: 'out_file$'
 endif
