@@ -9,6 +9,7 @@
 # 1. 【オブジェクト分析モード】
 #    Praat上で TextGrid を選択（反転表示）している場合、フォルダ指定なしで
 #    選択中の TextGrid を即座に分析し、画面（Infoウィンドウ）に結果を表示します。
+#    必要に応じてTSVファイルへの保存も可能です。
 # 2. 【フォルダ一括処理モード】
 #    Praat上で何も選択していない場合、自動的にマウスで選べる「フォルダ参照ダイアログ」
 #    が起動します。パスの手打ち入力不要で、フォルダ内の全ファイルを一括集計し、
@@ -29,26 +30,31 @@ if num_selected > 0
     # ==========================================================================
     # 【モード1】Praat上で選択中の TextGrid を直接分析（パス指定不要）
     # ==========================================================================
-    beginPause: "区間継続時間の計算（選択中のオブジェクトを分析）"
+    beginPause: "区間継続時間の計算（選択オブジェクト分析）"
         comment: "Praat上で選択されている " + string$(num_selected) + " 個の TextGrid を分析します。"
-        positive: "Tier_number (対象Tier番号)", 1
-        boolean: "Skip_empty_intervals (空白ラベルを除外)", 1
-        boolean: "Save_to_TSV_file (TSVファイルにも保存)", 0
+        comment: "対象のTier番号（1以上の整数）:"
+        positive: "tier_number", 1
+        comment: "空白ラベル（無音区間など）を除外する:"
+        boolean: "skip_empty_intervals", 1
+        comment: "結果をTSVファイルとしても保存する:"
+        boolean: "save_to_tsv", 0
     clicked = endPause: "キャンセル", "分析を実行", 2, 1
     
     if clicked = 1
         exitScript: "処理がキャンセルされました。"
     endif
     
-    tier_number = tier_number
+    # 変数の取得
+    target_tier = tier_number
     skip_empty = skip_empty_intervals
-    save_tsv = save_to_TSV_file
+    do_save_tsv = save_to_tsv
     
     tsv_out_file$ = ""
-    if save_tsv
-        tsv_out_file$ = chooseWriteFile$: "保存先のTSVファイルを指定してください", "duration_results.tsv"
-        if tsv_out_file$ = ""
-            save_tsv = 0
+    if do_save_tsv
+        tsv_out_file$ = chooseWriteFile$: "保存先のTSVファイル名を指定してください", "duration_results.tsv"
+        if tsv_out_file$ == ""
+            do_save_tsv = 0
+            echo 【案内】ファイル保存がキャンセルされたため、画面表示のみ実行します。
         endif
     endif
 
@@ -59,13 +65,13 @@ if num_selected > 0
 
     echo === 区間継続時間の計算結果 ===
     echo 対象オブジェクト数: 'num_selected' 件
-    echo 対象Tier: 'tier_number'
+    echo 対象Tier: 'target_tier'
     printline
     
     header$ = "ObjectName" + tab$ + "IntervalIndex" + tab$ + "Label" + tab$ + "StartTime_s" + tab$ + "EndTime_s" + tab$ + "Duration_s" + tab$ + "Duration_ms"
     echo 'header$'
     
-    if save_tsv
+    if do_save_tsv and tsv_out_file$ <> ""
         writeFileLine: tsv_out_file$, header$
     endif
     
@@ -77,13 +83,14 @@ if num_selected > 0
         name$ = selected$("TextGrid")
         
         num_tiers = Get number of tiers
-        if tier_number <= num_tiers
-            if Is interval tier: tier_number
-                num_intervals = Get number of intervals: tier_number
+        if target_tier <= num_tiers
+            if Is interval tier: target_tier
+                num_intervals = Get number of intervals: target_tier
                 for j to num_intervals
-                    label$ = Get label of interval: tier_number, j
-                    start_t = Get start time of interval: tier_number, j
-                    end_t = Get end time of interval: tier_number, j
+                    selectObject: current_tg
+                    label$ = Get label of interval: target_tier, j
+                    start_t = Get start time of interval: target_tier, j
+                    end_t = Get end time of interval: target_tier, j
                     dur_s = end_t - start_t
                     dur_ms = dur_s * 1000
                     
@@ -91,25 +98,25 @@ if num_selected > 0
                     if not (skip_empty and clean_label$ == "")
                         row$ = name$ + tab$ + string$(j) + tab$ + clean_label$ + tab$ + fixed$(start_t, 4) + tab$ + fixed$(end_t, 4) + tab$ + fixed$(dur_s, 4) + tab$ + fixed$(dur_ms, 2)
                         echo 'row$'
-                        if save_tsv
+                        if do_save_tsv and tsv_out_file$ <> ""
                             appendFileLine: tsv_out_file$, row$
                         endif
                         total_intervals = total_intervals + 1
                     endif
                 endfor
             else
-                echo 【注意】 'name$' の Tier 'tier_number' はインターバル段ではありません。
+                echo 【注意】 'name$' の Tier 'target_tier' はインターバル段ではありません。
             endif
         else
-            echo 【注意】 'name$' には Tier 'tier_number' が存在しません。
+            echo 【注意】 'name$' には Tier 'target_tier' が存在しません。
         endif
     endfor
     
     printline
     echo ==============================================
     echo 完了: 合計 'total_intervals' 件の区間時間を集計しました。
-    if save_tsv
-        echo ファイル保存先: 'tsv_out_file$'
+    if do_save_tsv and tsv_out_file$ <> ""
+        echo TSV保存先: 'tsv_out_file$'
     endif
 
 else
@@ -117,7 +124,7 @@ else
     # 【モード2】フォルダ参照ダイアログによる一括処理（パス手打ち不要）
     # ==========================================================================
     folder$ = chooseDirectory$: "TextGridファイルが入っているフォルダを選択してください"
-    if folder$ = ""
+    if folder$ == ""
         exitScript: "処理がキャンセルされました。"
     endif
     
@@ -130,32 +137,37 @@ else
     
     beginPause: "区間継続時間の計算（フォルダ一括処理）"
         comment: "選択フォルダ: " + folder$
-        positive: "Tier_number (対象Tier番号)", 1
-        sentence: "Extension (対象の拡張子)", ".TextGrid"
-        boolean: "Skip_empty_intervals (空白ラベルを除外)", 1
-        sentence: "Result_file (保存先ファイル名)", default_tsv$
+        comment: "対象のTier番号（1以上の整数）:"
+        positive: "tier_number", 1
+        comment: "対象ファイルの拡張子:"
+        sentence: "extension", ".TextGrid"
+        comment: "空白ラベル（無音区間など）を除外する:"
+        boolean: "skip_empty_intervals", 1
+        comment: "結果保存先のTSVファイル名:"
+        sentence: "result_file", default_tsv$
     clicked = endPause: "キャンセル", "一括処理を実行", 2, 1
     
     if clicked = 1
         exitScript: "処理がキャンセルされました。"
     endif
     
-    tier_number = tier_number
+    target_tier = tier_number
     ext$ = extension$
     skip_empty = skip_empty_intervals
-    result_file$ = result_file$
+    out_file$ = result_file$
+    
+    # 出力パスが空の場合は自動でデフォルト設定
+    if out_file$ == ""
+        out_file$ = default_tsv$
+    endif
     
     echo === フォルダ一括処理を開始します ===
     echo 対象フォルダ: 'folder$'
-    echo 対象Tier: 'tier_number'
-    echo 保存先: 'result_file$'
-    
-    if fileReadable(result_file$)
-        deleteFile: result_file$
-    endif
+    echo 対象Tier: 'target_tier'
+    echo 保存先: 'out_file$'
     
     header$ = "Filename" + tab$ + "IntervalIndex" + tab$ + "Label" + tab$ + "StartTime_s" + tab$ + "EndTime_s" + tab$ + "Duration_s" + tab$ + "Duration_ms"
-    writeFileLine: result_file$, header$
+    writeFileLine: out_file$, header$
     
     file_list = Create Strings as file list: "fileList", folder$ + "*" + ext$
     num_files = Get number of strings
@@ -176,21 +188,21 @@ else
         selectObject: tg
         num_tiers = Get number of tiers
         
-        if tier_number <= num_tiers
-            if Is interval tier: tier_number
-                num_intervals = Get number of intervals: tier_number
+        if target_tier <= num_tiers
+            if Is interval tier: target_tier
+                num_intervals = Get number of intervals: target_tier
                 for j to num_intervals
                     selectObject: tg
-                    label$ = Get label of interval: tier_number, j
-                    start_t = Get start time of interval: tier_number, j
-                    end_t = Get end time of interval: tier_number, j
+                    label$ = Get label of interval: target_tier, j
+                    start_t = Get start time of interval: target_tier, j
+                    end_t = Get end time of interval: target_tier, j
                     dur_s = end_t - start_t
                     dur_ms = dur_s * 1000
                     
                     clean_label$ = replace_regex$(label$, "^\s+|\s+$", "", 0)
                     if not (skip_empty and clean_label$ == "")
                         row$ = basename$ + tab$ + string$(j) + tab$ + clean_label$ + tab$ + fixed$(start_t, 4) + tab$ + fixed$(end_t, 4) + tab$ + fixed$(dur_s, 4) + tab$ + fixed$(dur_ms, 2)
-                        appendFileLine: result_file$, row$
+                        appendFileLine: out_file$, row$
                         total_intervals = total_intervals + 1
                     endif
                 endfor
@@ -205,5 +217,5 @@ else
     
     echo ==============================================
     echo 完了: 合計 'total_intervals' 件の区間時間を集計しました。
-    echo 保存先: 'result_file$'
+    echo 保存先: 'out_file$'
 endif
