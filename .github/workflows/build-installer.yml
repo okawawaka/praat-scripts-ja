@@ -31,22 +31,62 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install Inno Setup
+        shell: powershell
         run: |
           choco install innosetup -y --no-progress
-          echo "C:\Program Files (x86)\Inno Setup 6" >> $env:GITHUB_PATH
+          $innoDir = "C:\Program Files (x86)\Inno Setup 6"
+          if (Test-Path $innoDir) {
+            $innoDir | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+            Write-Host "Added $innoDir to GITHUB_PATH"
+          }
 
       - name: Compile Installer with ISCC
+        shell: powershell
         run: |
-          mkdir dist -ErrorAction SilentlyContinue
-          iscc installer\installer.iss
-
-      - name: Verify Output Exists
-        run: |
-          if (-not (Test-Path "dist\Praat-JapaneseTools-Setup.exe")) {
-            Write-Error "Installer executable was not generated!"
+          # ISCC の実行可能ファイルを探す
+          $iscc = (Get-Command ISCC.exe -ErrorAction SilentlyContinue)?.Source
+          if (-not $iscc) {
+            $candidates = @(
+              "C:\Program Files (x86)\Inno Setup 6\ISCC.exe",
+              "C:\Program Files\Inno Setup 6\ISCC.exe",
+              "C:\ProgramData\chocolatey\bin\iscc.exe"
+            )
+            foreach ($c in $candidates) {
+              if (Test-Path $c) {
+                $iscc = $c
+                break
+              }
+            }
+          }
+          if (-not $iscc) {
+            $found = Get-ChildItem -Path "C:\Program Files*" -Filter "ISCC.exe" -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
+            if ($found) { $iscc = $found.FullName }
+          }
+          if (-not $iscc) {
+            Write-Error "ISCC.exe not found on runner!"
             exit 1
           }
-          Get-Item dist\Praat-JapaneseTools-Setup.exe | Select-Object Name, Length, LastWriteTime
+
+          Write-Host "Found ISCC compiler: $iscc"
+          New-Item -ItemType Directory -Path dist -Force | Out-Null
+          
+          # コンパイル実行
+          & $iscc installer\installer.iss
+          if ($LASTEXITCODE -ne 0) {
+            Write-Error "Inno Setup compilation failed with exit code $LASTEXITCODE"
+            exit $LASTEXITCODE
+          }
+
+      - name: Verify Output Exists
+        shell: powershell
+        run: |
+          $exePath = "dist\Praat-JapaneseTools-Setup.exe"
+          if (-not (Test-Path $exePath)) {
+            Write-Error "Installer executable was not generated at $exePath!"
+            exit 1
+          }
+          $item = Get-Item $exePath
+          Write-Host "Success! Created installer: $($item.FullName) ($([math]::Round($item.Length / 1KB, 2)) KB)"
 
       - name: Upload Installer as Artifact
         uses: actions/upload-artifact@v4
