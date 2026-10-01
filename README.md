@@ -79,57 +79,54 @@ Praat をローカル環境にインストールすることなく、ブラウ�
 
 ## プラグインとしての導入
 
-本スクリプト集は Praat 公式のプラグインシステムに対応しています。拡張機能として登録することで、スクリプトファイルを個別に開くことなく、Praat のメニューバーや右側アクションボタンからワンクリックで呼び出せるようになります。
+本スクリプト集は Praat のプラグイン機能に対応しています。プラグインとして配置することで、スクリプトファイルを個別に開くことなく、Praat のメニューバーおよびアクションボタンから直接機能を呼び出せます。
 
-### 📦 インストール方法（選べる3つの方法）
+### インストール手順
 
-#### 方法1: 【おすすめ】Windows専用 1クリック・インストーラー（.exe）
-**ZIPの解凍やコマンド操作が一切不要な、最も簡単な方法です。**
+利用環境に応じて以下のいずれかの方法でインストールを行います。
 
-1. [Releases ページ](https://github.com/okawawaka/praat-scripts-ja/releases/latest) から **`Praat-JapaneseTools-Setup.exe`** をダウンロードします。
-2. ダウンロードした `.exe` ファイルをダブルクリックしてインストーラーを起動し、画面の指示に従って「次へ」を押します。
-   - ※管理者権限は不要です。自動的に Praat の設定フォルダにプラグインが導入されます。
-3. **Praat を起動（または再起動）**:
-   - 上部メニューバー **`Praat`** $\to$ **`日本語音声ツール (JA)`** に各種ツールが追加されます。
-   - 音声（Sound）や TextGrid を選択すると、右側パネルに **`日本語ツール (JA)`** ボタンが表示されます。
+#### 1. Windows用インストーラー（.exe）
 
-> [!TIP]
-> **アンインストールも簡単**:  
-> Windowsの「設定」 $\to$ 「アプリと機能（インストールされているアプリ）」から通常のソフトと同様にいつでも安全に削除できます。
+1. [Releases](https://github.com/okawawaka/praat-scripts-ja/releases/latest) から `Praat-JapaneseTools-Setup.exe` をダウンロードします。
+2. ダウンロードしたファイルを実行し、画面の案内に従ってインストールを完了します。
+   - 管理者権限は不要です（ユーザープロファイル配下の Praat プラグインディレクトリへ自動配置されます）。
+3. Praat を起動（または再起動）します。
+   - メニューバーの `Praat` -> `日本語音声ツール (JA)` に各種コマンドが登録されます。
+   - オブジェクトウィンドウで Sound または TextGrid を選択した際、右側のアクションパネルにも `日本語ツール (JA)` が表示されます。
 
----
-
-#### 方法2: Praat アプリ内から直接インストール（Windows / macOS / Linux 共通）
-**Praat を起動してスクリプトを実行するだけの OS 共通インストール方法です。**
-
-1. 本リポジトリの **[`installer/install.praat`](installer/install.praat)** を Praat で開きます。  
-   （Praat メニューの `Praat` $\to$ `Open Praat script...` またはドラッグ＆ドロップ）
-2. スクリプトウィンドウで **`Run`** $\to$ **`Run`** を実行します。
-3. 画面の指示に従って「インストール実行」をクリックし、Praat を再起動すれば完了です。
+**アンインストール:**  
+Windows の「設定」 -> 「アプリ」 -> 「インストールされているアプリ」から通常の手順でアンインストールできます。
 
 ---
 
-#### 方法3: スクリプトによる自動リンク（上級者・開発者向け）
+#### 2. Praat スクリプト（install.praat）
 
-<details>
-<summary><b>手動/スクリプト実行での導入（クリックして展開）</b></summary>
+OS（Windows / macOS / Linux）を問わず、Praat 上からインストールを実行できます。
 
-##### Windows の場合
-1. ダウンロードした ZIP ファイルを右クリックし、**「すべて展開」** で解凍します。
-2. 展開フォルダ内の **`install.bat`** をダブルクリックして実行します。
+1. 本リポジトリ内の [`installer/install.praat`](installer/install.praat) を Praat で開きます（`Praat` -> `Open Praat script...` またはウィンドウへのドラッグ＆ドロップ）。
+2. スクリプトエディタで `Run` -> `Run` を実行します。
+3. 表示されるダイアログの「インストール実行」をクリックします。
+4. Praat を再起動します。
 
-##### macOS / Linux の場合
-1. ターミナルを開き、本フォルダで以下を実行します：
-   ```bash
-   bash install.sh
-   ```
-2. Praat を再起動してご利用ください。
+---
 
-**アンインストール**:
+#### 3. シェルスクリプト / バッチファイル
+
+リポジトリを作業ディレクトリにクローンまたは展開した状態で、スクリプトを実行してシンボリックリンクまたはジャンクションを作成します。
+
+##### Windows
+`install.bat` を実行します（`%USERPROFILE%\Praat\plugin_JapaneseTools` へリンクが作成されます）。
+
+##### macOS / Linux
+ターミナルで以下を実行します：
+```bash
+bash install.sh
+```
+（macOS: `~/Library/Preferences/Praat Prefs/plugin_JapaneseTools`、Linux: `~/.praat-dir/plugin_JapaneseTools` へリンクが作成されます）
+
+**アンインストール:**
 - Windows: `uninstall.bat` を実行
-- macOS/Linux: `bash uninstall.sh` を実行
-
-</details>
+- macOS / Linux: `bash uninstall.sh` を実行
 
 ---
 
