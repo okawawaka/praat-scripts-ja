@@ -30,59 +30,19 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install Inno Setup
-        shell: powershell
-        run: |
-          choco install innosetup -y --no-progress
-          $innoDir = "C:\Program Files (x86)\Inno Setup 6"
-          if (Test-Path $innoDir) {
-            $innoDir | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-          }
-
-      - name: Compile Installer with ISCC
-        shell: powershell
-        run: |
-          # ISCC の実行ファイルパスを特定
-          $iscc = (Get-Command ISCC.exe -ErrorAction SilentlyContinue)?.Source
-          if (-not $iscc) {
-            $candidates = @(
-              "C:\Program Files (x86)\Inno Setup 6\ISCC.exe",
-              "C:\Program Files\Inno Setup 6\ISCC.exe",
-              "C:\ProgramData\chocolatey\bin\iscc.exe"
-            )
-            foreach ($c in $candidates) {
-              if (Test-Path $c) {
-                $iscc = $c
-                break
-              }
-            }
-          }
-          if (-not $iscc) {
-            $found = Get-ChildItem -Path "C:\Program Files*" -Filter "ISCC.exe" -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
-            if ($found) { $iscc = $found.FullName }
-          }
-          if (-not $iscc) {
-            Write-Error "ISCC.exe compiler not found!"
-            exit 1
-          }
-
-          Write-Host "Found ISCC compiler: $iscc"
-          New-Item -ItemType Directory -Path dist -Force | Out-Null
-
-          # ISCC コンパイルの実行（標準出力・標準エラー出力をそのままコンソールに出力）
-          & $iscc installer\installer.iss
-          $exitCode = $LASTEXITCODE
-          if ($exitCode -ne 0) {
-            Write-Error "ISCC exited with code $exitCode"
-            exit $exitCode
-          }
+      - name: Compile Inno Setup Script
+        uses: Minionguyjpro/Inno-Setup-Action@v1.2.2
+        with:
+          path: installer/installer.iss
+          options: /O+
 
       - name: Verify Output Exists
         shell: powershell
         run: |
           $exePath = "dist\Praat-JapaneseTools-Setup.exe"
           if (-not (Test-Path $exePath)) {
-            Write-Error "Installer executable was not generated at $exePath!"
+            Write-Error "Installer executable was not found at $exePath!"
+            Get-ChildItem -Recurse -Filter "*.exe" | Select-Object FullName
             exit 1
           }
           $item = Get-Item $exePath

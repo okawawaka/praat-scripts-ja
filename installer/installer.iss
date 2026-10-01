@@ -33,9 +33,6 @@ Compression=lzma2/ultra64
 SolidCompression=yes
 WizardStyle=modern
 
-[Languages]
-Name: "japanese"; MessagesFile: "compiler:Languages\Japanese.isl"
-
 [Files]
 Source: "..\setup.praat"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\README.md"; DestDir: "{app}"; Flags: ignoreversion
