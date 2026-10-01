@@ -1,0 +1,63 @@
+name: Build Windows Installer
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*'
+    paths:
+      - 'installer/**'
+      - 'scripts/**'
+      - 'setup.praat'
+      - '.github/workflows/build-installer.yml'
+  pull_request:
+    paths:
+      - 'installer/**'
+      - 'scripts/**'
+      - 'setup.praat'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build Inno Setup Installer (.exe)
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Inno Setup
+        run: |
+          choco install innosetup -y --no-progress
+          echo "C:\Program Files (x86)\Inno Setup 6" >> $env:GITHUB_PATH
+
+      - name: Compile Installer with ISCC
+        run: |
+          mkdir dist -ErrorAction SilentlyContinue
+          iscc installer\installer.iss
+
+      - name: Verify Output Exists
+        run: |
+          if (-not (Test-Path "dist\Praat-JapaneseTools-Setup.exe")) {
+            Write-Error "Installer executable was not generated!"
+            exit 1
+          }
+          Get-Item dist\Praat-JapaneseTools-Setup.exe | Select-Object Name, Length, LastWriteTime
+
+      - name: Upload Installer as Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Praat-JapaneseTools-Setup
+          path: dist/Praat-JapaneseTools-Setup.exe
+          if-no-files-found: error
+
+      - name: Create Release and Upload Asset (Tag Push only)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/Praat-JapaneseTools-Setup.exe
+          generate_release_notes: true
