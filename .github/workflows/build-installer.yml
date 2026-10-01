@@ -37,13 +37,12 @@ jobs:
           $innoDir = "C:\Program Files (x86)\Inno Setup 6"
           if (Test-Path $innoDir) {
             $innoDir | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-            Write-Host "Added $innoDir to GITHUB_PATH"
           }
 
       - name: Compile Installer with ISCC
         shell: powershell
         run: |
-          # ISCC の実行可能ファイルを探す
+          # ISCC の実行ファイルパスを特定
           $iscc = (Get-Command ISCC.exe -ErrorAction SilentlyContinue)?.Source
           if (-not $iscc) {
             $candidates = @(
@@ -63,18 +62,19 @@ jobs:
             if ($found) { $iscc = $found.FullName }
           }
           if (-not $iscc) {
-            Write-Error "ISCC.exe not found on runner!"
+            Write-Error "ISCC.exe compiler not found!"
             exit 1
           }
 
           Write-Host "Found ISCC compiler: $iscc"
           New-Item -ItemType Directory -Path dist -Force | Out-Null
-          
-          # コンパイル実行
+
+          # ISCC コンパイルの実行（標準出力・標準エラー出力をそのままコンソールに出力）
           & $iscc installer\installer.iss
-          if ($LASTEXITCODE -ne 0) {
-            Write-Error "Inno Setup compilation failed with exit code $LASTEXITCODE"
-            exit $LASTEXITCODE
+          $exitCode = $LASTEXITCODE
+          if ($exitCode -ne 0) {
+            Write-Error "ISCC exited with code $exitCode"
+            exit $exitCode
           }
 
       - name: Verify Output Exists

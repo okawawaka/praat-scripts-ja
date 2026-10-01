@@ -17,31 +17,26 @@ AppName={#MyAppName}
 AppVersion={#MyAppVersion}
 AppPublisher={#MyAppPublisher}
 AppPublisherURL={#MyAppURL}
-AppSupportURL={#MyAppURL}
-AppUpdatesURL={#MyAppURL}
 
-; 2. プラグインの配置先: %USERPROFILE%\Praat\plugin_JapaneseTools
-DefaultDirName={userprofile}\Praat\plugin_JapaneseTools
+; 2. プラグイン配置先: {%USERPROFILE}\Praat\plugin_JapaneseTools
+DefaultDirName={%USERPROFILE}\Praat\plugin_JapaneseTools
 DisableDirPage=no
 DisableProgramGroupPage=yes
 DirExistsWarning=no
+Uninstallable=yes
+UninstallDisplayName={#MyAppName} (Praat プラグイン)
 
-; 3. 出力設定
+; 3. 出力ファイル設定
 OutputDir=..\dist
 OutputBaseFilename=Praat-JapaneseTools-Setup
 Compression=lzma2/ultra64
 SolidCompression=yes
 WizardStyle=modern
 
-; 4. アンインストーラー設定
-UninstallFilesDir={userprofile}\Praat\plugin_JapaneseTools
-UninstallDisplayName={#MyAppName} (Praat プラグイン)
-
 [Languages]
 Name: "japanese"; MessagesFile: "compiler:Languages\Japanese.isl"
 
 [Files]
-; プラグイン本体スクリプトおよび定義ファイル
 Source: "..\setup.praat"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\README.md"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\LICENSE"; DestDir: "{app}"; Flags: ignoreversion
