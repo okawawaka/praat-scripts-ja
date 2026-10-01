@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Praat Scripts (Japanese Edition) - 音響分析スクリプト集・拡張機能</title>
+  <meta name="description" content="言語学・音声学における音響分析処理を自動化するための Praat スクリプト集および拡張機能の解説・配布サイト。">
+  <style>
+    :root {
+      --bg-color: #ffffff;
+      --text-color: #111111;
+      --text-muted: #555555;
+      --line-color: #e5e5e5;
+      --line-dark: #111111;
+      --accent-color: #0033cc;
+      --accent-hover: #002299;
+      --bg-subtle: #f8f8f8;
+      --code-bg: #f3f3f3;
+      --font-sans: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Segoe UI", "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic UI", Meiryo, sans-serif;
+      --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      font-family: var(--font-sans);
+      font-size: 14px;
+      line-height: 1.7;
+      letter-spacing: -0.01em;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    a {
+      color: var(--accent-color);
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+
+    a:hover {
+      color: var(--accent-hover);
+    }
+
+    .container {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* Header */
+    header {
+      border-bottom: 2px solid var(--line-dark);
+      padding: 24px 0 16px;
+    }
+
+    .header-inner {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .site-title {
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .header-meta {
+      font-size: 12px;
+      color: var(--text-muted);
+      display: flex;
+      gap: 16px;
+    }
+
+    .header-meta a {
+      color: var(--text-muted);
+    }
+
+    .header-meta a:hover {
+      color: var(--text-color);
+    }
+
+    /* Hero / Download */
+    .hero {
+      padding: 48px 0 40px;
+      border-bottom: 1px solid var(--line-color);
+    }
+
+    .hero-lead {
+      font-size: 24px;
+      font-weight: 700;
+      line-height: 1.4;
+      letter-spacing: -0.03em;
+      max-width: 760px;
+      margin-bottom: 20px;
+    }
+
+    .hero-description {
+      font-size: 15px;
+      color: var(--text-muted);
+      max-width: 720px;
+      margin-bottom: 32px;
+    }
+
+    .download-block {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 8px;
+    }
+
+    .btn-download {
+      display: inline-block;
+      background-color: var(--accent-color);
+      color: #ffffff;
+      font-weight: 700;
+      font-size: 15px;
+      padding: 14px 28px;
+      text-decoration: none;
+      letter-spacing: -0.01em;
+      border: 1px solid var(--accent-color);
+      transition: background-color 0.15s ease;
+    }
+
+    .btn-download:hover {
+      background-color: var(--accent-hover);
+      color: #ffffff;
+    }
+
+    .download-meta {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+    }
+
+    /* Layout Sections */
+    section {
+      padding: 48px 0;
+      border-bottom: 1px solid var(--line-color);
+    }
+
+    .section-grid {
+      display: grid;
+      grid-template-columns: 240px 1fr;
+      gap: 32px;
+    }
+
+    .section-title {
+      font-size: 15px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-color);
+    }
+
+    .section-content {
+      min-width: 0;
+    }
+
+    /* Subsections & Cards */
+    .subsection {
+      margin-bottom: 36px;
+    }
+
+    .subsection:last-child {
+      margin-bottom: 0;
+    }
+
+    .subsection-title {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid var(--line-dark);
+    }
+
+    .step-list {
+      list-style: decimal inside;
+      margin-bottom: 16px;
+    }
+
+    .step-list li {
+      margin-bottom: 8px;
+    }
+
+    .note-box {
+      background-color: var(--bg-subtle);
+      border-left: 3px solid var(--line-dark);
+      padding: 12px 16px;
+      margin: 16px 0;
+      font-size: 13px;
+    }
+
+    /* Tables */
+    .table-container {
+      width: 100%;
+      overflow-x: auto;
+      margin-top: 16px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 13px;
+    }
+
+    th, td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--line-color);
+      vertical-align: top;
+    }
+
+    th {
+      font-weight: 700;
+      background-color: var(--bg-subtle);
+      border-bottom: 1px solid var(--line-dark);
+      white-space: nowrap;
+    }
+
+    td.code-cell {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    /* Code Block */
+    pre, code {
+      font-family: var(--font-mono);
+      font-size: 12px;
+    }
+
+    pre {
+      background-color: var(--code-bg);
+      padding: 12px 16px;
+      overflow-x: auto;
+      margin: 12px 0;
+      border: 1px solid var(--line-color);
+    }
+
+    p code {
+      background-color: var(--code-bg);
+      padding: 2px 6px;
+      border: 1px solid var(--line-color);
+    }
+
+    /* Footer */
+    footer {
+      padding: 32px 0 48px;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .footer-inner {
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .section-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+      }
+      .hero-lead {
+        font-size: 20px;
+      }
+      .btn-download {
+        width: 100%;
+        text-align: center;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+
+    <!-- Header -->
+    <header>
+      <div class="header-inner">
+        <h1 class="site-title">Praat Scripts (Japanese Edition)</h1>
+        <div class="header-meta">
+          <span>Release v1.0.0</span>
+          <a href="https://github.com/okawawaka/praat-scripts-ja" target="_blank" rel="noopener">GitHub Repository</a>
+        </div>
+      </div>
+    </header>
+
+    <!-- Hero / Download Action -->
+    <section class="hero">
+      <div class="hero-lead">
+        言語学・音声学における音響分析処理を自動化するための Praat スクリプト集および拡張機能。
+      </div>
+      <p class="hero-description">
+        Mietta Lennes 氏の SpeCT (Speech Corpus Toolkit for Praat) および FieldDB/Praat-Scripts を基に、ダイアログの日本語化、Praat 6.x 系関数構文への最適化、および TSV 形式でのデータ出力に対応しています。
+      </p>
+
+      <div class="download-block">
+        <a href="https://github.com/okawawaka/praat-scripts-ja/releases/latest/download/Praat-JapaneseTools-Setup.exe" class="btn-download">
+          Praat-JapaneseTools-Setup.exe をダウンロード
+        </a>
+        <span class="download-meta">Version 1.0.0 | Windows 64-bit | 管理者権限不要</span>
+      </div>
+    </section>
+
+    <!-- Plugin Installation -->
+    <section id="installation">
+      <div class="section-grid">
+        <h2 class="section-title">プラグイン導入</h2>
+        <div class="section-content">
+          <p style="margin-bottom: 24px;">
+            Praat のプラグイン機能として導入することで、スクリプトファイルを個別に読み込むことなく、メニューバーおよびアクションパネルから直接機能を実行できます。
+          </p>
+
+          <!-- Method 1: Windows Installer -->
+          <div class="subsection">
+            <h3 class="subsection-title">1. Windows用インストーラー（.exe）</h3>
+            <ol class="step-list">
+              <li>上部のダウンロードボタンから <code>Praat-JapaneseTools-Setup.exe</code> を取得します。</li>
+              <li>ダウンロードしたファイルを実行し、画面の指示に従ってインストールを完了します（管理者権限は不要です）。</li>
+              <li>Praat を起動（または再起動）します。</li>
+            </ol>
+            <div class="note-box">
+              <strong>反映されるメニュー位置:</strong><br>
+              ・メニューバー: <code>Praat</code> &rarr; <code>日本語音声ツール (JA)</code><br>
+              ・アクションボタン: Sound または TextGrid オブジェクト選択時に右側パネルに <code>日本語ツール (JA)</code> ボタンが表示されます。<br><br>
+              <strong>アンインストール:</strong> Windows の「設定」 &rarr; 「アプリ」 &rarr; 「インストールされているアプリ」から削除できます。
+            </div>
+          </div>
+
+          <!-- Method 2: Praat Script -->
+          <div class="subsection">
+            <h3 class="subsection-title">2. Praat スクリプト（install.praat）</h3>
+            <p style="margin-bottom: 12px;">OS（Windows / macOS / Linux）に関わらず、Praat アプリケーション上から直接登録を行う手順です。</p>
+            <ol class="step-list">
+              <li>本リポジトリの <code>installer/install.praat</code> を Praat で開きます（メニューの <code>Praat</code> &rarr; <code>Open Praat script...</code> またはドラッグ＆ドロップ）。</li>
+              <li>スクリプトウィンドウの <code>Run</code> &rarr; <code>Run</code> を実行します。</li>
+              <li>確認ダイアログの「インストール実行」をクリックします。</li>
+              <li>Praat を再起動します。</li>
+            </ol>
+          </div>
+
+          <!-- Method 3: Shell / Batch Script -->
+          <div class="subsection">
+            <h3 class="subsection-title">3. シェルスクリプト / バッチファイル</h3>
+            <p style="margin-bottom: 12px;">リポジトリを作業ディレクトリにクローンまたは展開してシンボリックリンク／ジャンクションを作成する手順です。</p>
+            <p><strong>Windows の場合:</strong></p>
+            <pre><code>installer\install.bat</code></pre>
+            <p><strong>macOS / Linux の場合:</strong></p>
+            <pre><code>bash installer/install.sh</code></pre>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- Standalone Execution -->
+    <section id="standalone">
+      <div class="section-grid">
+        <h2 class="section-title">単体実行</h2>
+        <div class="section-content">
+          <p style="margin-bottom: 16px;">
+            プラグインとしてインストールを行わず、必要なスクリプトファイルのみを個別に実行する手順です。
+          </p>
+
+          <ol class="step-list">
+            <li>Praat を起動し、メニューバーの <code>Praat</code> &rarr; <code>Open Praat script...</code> を選択します。</li>
+            <li>実行対象のスクリプト（例: <code>scripts/segmentation/extract_intervals_to_wav.praat</code>）を選択して開きます。</li>
+            <li>スクリプトエディタのメニュー <code>Run</code> &rarr; <code>Run</code>（ショートカット: <code>Ctrl + R</code> / <code>Cmd + R</code>）を実行します。</li>
+            <li>パラメータ設定ダイアログが表示されるため、対象音声や TextGrid が配置されたディレクトリパス、Tier 番号等を指定して <code>OK</code> を押下します。</li>
+            <li>処理結果は指定した出力ディレクトリに TSV ファイルまたは WAV ファイル等として保存されます。</li>
+          </ol>
+        </div>
+      </div>
+    </section>
+
+    <!-- Script Directory -->
+    <section id="directory">
+      <div class="section-grid">
+        <h2 class="section-title">収録スクリプト</h2>
+        <div class="section-content">
+          <p style="margin-bottom: 16px;">
+            各スクリプトは <code>scripts/</code> 配下の機能別ディレクトリに格納されています。出力ファイル形式は集計・後続処理に適したタブ区切りテキスト（TSV）に統一されています。
+          </p>
+
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>分野</th>
+                  <th>スクリプト名</th>
+                  <th>機能概要</th>
+                  <th>対象オブジェクト</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>切り出し</td>
+                  <td class="code-cell">extract_intervals_to_wav.praat</td>
+                  <td>TextGrid のラベル区間ごとに音声を分割し、個別 WAV として保存</td>
+                  <td>Sound + TextGrid</td>
+                </tr>
+                <tr>
+                  <td>検出</td>
+                  <td class="code-cell">mark_pauses.praat</td>
+                  <td>無音・ポーズ区間を音量基準で自動検出し、TextGrid に境界を挿入</td>
+                  <td>Sound</td>
+                </tr>
+                <tr>
+                  <td>フォルマント</td>
+                  <td class="code-cell">collect_formant_data.praat</td>
+                  <td>各母音区間の中央点におけるフォルマント（F1〜F5）および帯域幅を測定</td>
+                  <td>Sound + TextGrid</td>
+                </tr>
+                <tr>
+                  <td>ピッチ</td>
+                  <td class="code-cell">collect_pitch_data.praat</td>
+                  <td>各区間の基本周波数（F0）の平均値・中央値・最大/最小値・標準偏差を集計</td>
+                  <td>Sound + TextGrid</td>
+                </tr>
+                <tr>
+                  <td>時間測定</td>
+                  <td class="code-cell">calculate_segment_durations.praat</td>
+                  <td>各区間の開始・終了時刻および継続時間（秒／ミリ秒）を集計</td>
+                  <td>TextGrid</td>
+                </tr>
+                <tr>
+                  <td>周波数変換</td>
+                  <td class="code-cell">change_sample_rate.praat</td>
+                  <td>フォルダ内の音声ファイルを指定サンプリングレートへ一括変換</td>
+                  <td>Sound（ファイル一括）</td>
+                </tr>
+                <tr>
+                  <td>チャンネル</td>
+                  <td class="code-cell">convert_stereo_to_mono.praat</td>
+                  <td>ステレオ音声（2ch）からモノラル音声（1ch）へ一括変換</td>
+                  <td>Sound（ファイル一括）</td>
+                </tr>
+                <tr>
+                  <td>可視化</td>
+                  <td class="code-cell">draw_formant_chart.praat</td>
+                  <td>測定されたフォルマントデータから F1-F2 母音散布図を描画</td>
+                  <td>Table</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+      <div class="footer-inner">
+        <div>
+          <span>ライセンス: GNU General Public License v3.0 (GPL-3.0)</span><br>
+          <span>ベース著作権: Mietta Lennes (SpeCT), FieldDB/Praat-Scripts | 日本語化・改訂: okawawaka</span>
+        </div>
+        <div>
+          <a href="https://github.com/okawawaka/praat-scripts-ja" target="_blank" rel="noopener">GitHub: okawawaka/praat-scripts-ja</a>
+        </div>
+      </div>
+    </footer>
+
+  </div>
+
+</body>
+</html>
