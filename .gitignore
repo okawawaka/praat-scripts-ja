@@ -11,6 +11,14 @@ desktop.ini
 *results.csv
 *results.tsv
 
+# Build & Packaging
+dist/
+
+# Jupyter Notebook & Python
+.ipynb_checkpoints/
+__pycache__/
+*.py[cod]
+
 # Editor / IDE
 .vscode/
 .idea/
