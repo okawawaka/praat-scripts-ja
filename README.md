@@ -112,21 +112,21 @@ OS（Windows / macOS / Linux）を問わず、Praat 上からインストール�
 
 #### 3. シェルスクリプト / バッチファイル
 
-リポジトリを作業ディレクトリにクローンまたは展開した状態で、スクリプトを実行してシンボリックリンクまたはジャンクションを作成します。
+リポジトリを作業ディレクトリにクローンまたは展開した状態で、`installer/` 配下のスクリプトを実行してシンボリックリンクまたはジャンクションを作成します。
 
 ##### Windows
-`install.bat` を実行します（`%USERPROFILE%\Praat\plugin_JapaneseTools` へリンクが作成されます）。
+`installer/install.bat` を実行します（`%USERPROFILE%\Praat\plugin_JapaneseTools` へリンクが作成されます）。
 
 ##### macOS / Linux
 ターミナルで以下を実行します：
 ```bash
-bash install.sh
+bash installer/install.sh
 ```
 （macOS: `~/Library/Preferences/Praat Prefs/plugin_JapaneseTools`、Linux: `~/.praat-dir/plugin_JapaneseTools` へリンクが作成されます）
 
 **アンインストール:**
-- Windows: `uninstall.bat` を実行
-- macOS / Linux: `bash uninstall.sh` を実行
+- Windows: `installer/uninstall.bat` を実行
+- macOS / Linux: `bash installer/uninstall.sh` を実行
 
 ---
 
