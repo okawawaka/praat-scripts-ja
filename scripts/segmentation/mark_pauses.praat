@@ -31,6 +31,8 @@ if num_sound > 0
     # ==========================================================================
     beginPause: "ポーズ自動検出（選択オブジェクト）"
         comment: "Praat上で選択されている Sound からポーズを検出します。"
+        comment: "ピッチ下限（Hz。強度計算用、標準: 100）:"
+        positive: "pitch_floor", 100
         comment: "最小ポーズ長（秒。標準: 0.15 〜 0.3秒）:"
         positive: "min_pause_duration", 0.2
         comment: "最小発話長（秒。標準: 0.05 〜 0.1秒）:"
@@ -47,6 +49,7 @@ if num_sound > 0
         exitScript: "処理がキャンセルされました。"
     endif
     
+    p_pitch_floor = pitch_floor
     p_min_pause = min_pause_duration
     p_min_sound = min_sounding_duration
     p_sil_thresh = silence_threshold
@@ -59,7 +62,7 @@ if num_sound > 0
     
     # ポーズ検出用TextGridを生成
     selectObject: sound_id
-    intensity_tg = To TextGrid (silences): p_sil_thresh, p_min_pause, p_min_sound, p_lbl$, s_lbl$
+    intensity_tg = To TextGrid (silences): p_pitch_floor, 0.0, p_sil_thresh, p_min_pause, p_min_sound, p_lbl$, s_lbl$
     Rename: sound_name$ + "_pause"
     
     # もし同時にTextGridも選択されていた場合はその段を統合
@@ -108,6 +111,8 @@ else
     
     beginPause: "ポーズ自動検出（フォルダ一括処理）"
         comment: "選択フォルダ: " + folder$
+        comment: "ピッチ下限（Hz。強度計算用、標準: 100）:"
+        positive: "pitch_floor", 100
         comment: "最小ポーズ長（秒。標準: 0.15 〜 0.3秒）:"
         positive: "min_pause_duration", 0.2
         comment: "最小発話長（秒。標準: 0.05 〜 0.1秒）:"
@@ -124,6 +129,7 @@ else
         exitScript: "処理がキャンセルされました。"
     endif
     
+    p_pitch_floor = pitch_floor
     p_min_pause = min_pause_duration
     p_min_sound = min_sounding_duration
     p_sil_thresh = silence_threshold
@@ -161,7 +167,7 @@ else
         endif
         
         selectObject: sound
-        intensity_tg = To TextGrid (silences): p_sil_thresh, p_min_pause, p_min_sound, p_lbl$, s_lbl$
+        intensity_tg = To TextGrid (silences): p_pitch_floor, 0.0, p_sil_thresh, p_min_pause, p_min_sound, p_lbl$, s_lbl$
         
         selectObject: tg
         num_tiers = Get number of tiers
