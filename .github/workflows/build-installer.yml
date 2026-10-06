@@ -6,11 +6,6 @@ on:
       - main
     tags:
       - 'v*'
-    paths:
-      - 'installer/**'
-      - 'scripts/**'
-      - 'setup.praat'
-      - '.github/workflows/build-installer.yml'
   pull_request:
     paths:
       - 'installer/**'
