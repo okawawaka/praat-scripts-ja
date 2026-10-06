@@ -4,7 +4,7 @@
 ; ==============================================================================
 
 #define MyAppName "Praat 日本語音声ツール"
-#define MyAppVersion "1.0.0"
+#define MyAppVersion "1.0.1"
 #define MyAppPublisher "okawawaka"
 #define MyAppURL "https://github.com/okawawaka/praat-scripts-ja"
 
