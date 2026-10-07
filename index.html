@@ -113,25 +113,47 @@
       display: flex;
       flex-direction: column;
       align-items: flex-start;
-      gap: 8px;
+      gap: 10px;
+    }
+
+    .download-buttons {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      width: 100%;
     }
 
     .btn-download {
-      display: inline-block;
+      display: inline-flex;
+      flex-direction: column;
+      justify-content: center;
       background-color: var(--accent-color);
       color: #ffffff;
-      font-weight: 700;
-      font-size: 15px;
-      padding: 14px 28px;
+      padding: 12px 22px;
       text-decoration: none;
       letter-spacing: -0.01em;
       border: 1px solid var(--accent-color);
       transition: background-color 0.15s ease;
+      min-width: 250px;
     }
 
     .btn-download:hover {
       background-color: var(--accent-hover);
       color: #ffffff;
+    }
+
+    .btn-download .btn-label {
+      font-size: 15px;
+      font-weight: 700;
+      line-height: 1.3;
+    }
+
+    .btn-download .btn-filename {
+      font-size: 11px;
+      font-family: var(--font-mono);
+      opacity: 0.85;
+      font-weight: 400;
+      margin-top: 3px;
     }
 
     .download-meta {
@@ -196,6 +218,44 @@
       padding: 12px 16px;
       margin: 16px 0;
       font-size: 13px;
+    }
+
+    .alert-box {
+      background-color: #fffbf0;
+      border: 1px solid #f0dfa8;
+      border-left: 4px solid #d97706;
+      padding: 14px 16px;
+      margin: 16px 0;
+      font-size: 13px;
+    }
+
+    .alert-box-title {
+      font-weight: 700;
+      color: #92400e;
+      margin-bottom: 8px;
+      font-size: 14px;
+    }
+
+    .screenshot-card {
+      margin: 14px 0 10px;
+      border: 1px solid var(--line-color);
+      background: #fafafa;
+      padding: 8px;
+      max-width: 420px;
+    }
+
+    .screenshot-card img {
+      width: 100%;
+      height: auto;
+      display: block;
+      border: 1px solid #e0e0e0;
+    }
+
+    .screenshot-caption {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 6px;
+      text-align: center;
     }
 
     /* Tables */
@@ -277,6 +337,10 @@
       .btn-download {
         width: 100%;
         text-align: center;
+        align-items: center;
+      }
+      .screenshot-card {
+        max-width: 100%;
       }
     }
   </style>
@@ -306,10 +370,17 @@
       </p>
 
       <div class="download-block">
-        <a href="https://github.com/okawawaka/praat-scripts-ja/releases/latest/download/Praat-JapaneseTools-Setup.exe" class="btn-download">
-          Praat-JapaneseTools-Setup.exe をダウンロード
-        </a>
-        <span class="download-meta">Version 1.0.1 | Windows 64-bit | 管理者権限不要</span>
+        <div class="download-buttons">
+          <a href="https://github.com/okawawaka/praat-scripts-ja/releases/latest/download/Praat-JapaneseTools-Setup.exe" class="btn-download">
+            <span class="btn-label">Windows 版をダウンロード</span>
+            <span class="btn-filename">Praat-JapaneseTools-Setup.exe</span>
+          </a>
+          <a href="https://github.com/okawawaka/praat-scripts-ja/releases/latest/download/Praat-JapaneseTools-Setup.pkg" class="btn-download">
+            <span class="btn-label">macOS 版をダウンロード</span>
+            <span class="btn-filename">Praat-JapaneseTools-Setup.pkg</span>
+          </a>
+        </div>
+        <span class="download-meta">Version 1.0.1 | Windows 64-bit / macOS (Intel &amp; Apple Silicon) | 管理者権限不要</span>
       </div>
     </section>
 
@@ -326,10 +397,30 @@
           <div class="subsection">
             <h3 class="subsection-title">1. Windows用インストーラー（.exe）</h3>
             <ol class="step-list">
-              <li>上部のダウンロードボタンから <code>Praat-JapaneseTools-Setup.exe</code> を取得します。</li>
+              <li>上部のダウンロードボタンから <strong>Windows 版（<code>Praat-JapaneseTools-Setup.exe</code>）</strong> を取得します。</li>
               <li>ダウンロードしたファイルを実行し、画面の指示に従ってインストールを完了します（管理者権限は不要です）。</li>
               <li>Praat を起動（または再起動）します。</li>
             </ol>
+
+            <!-- Windows SmartScreen Alert -->
+            <div class="alert-box">
+              <div class="alert-box-title">【注意】Windows による保護の警告が表示された場合</div>
+              <p style="margin-bottom: 8px;">
+                インストーラー実行時、Microsoft Defender SmartScreen により<strong>「Windows によって PC が保護されました」</strong>（発行元: 不明な発行元）という青い画面が表示される場合があります。
+              </p>
+              <p style="margin-bottom: 12px;">
+                ※これは個人・研究用途のオープンソースソフトウェアであるため、有償の組織用コード署名を行っていないことによる仕様です。危険なファイルではありませんので、以下の手順で実行してください。
+              </p>
+              <ol class="step-list" style="margin-bottom: 12px;">
+                <li>画面内の説明文にある<strong>「詳細情報」</strong>（下線付きリンク）をクリックします。</li>
+                <li>右下に表示される<strong>「実行」</strong>ボタンをクリックします。</li>
+              </ol>
+              <div class="screenshot-card">
+                <img src="images/windows-smartscreen.png" alt="Microsoft Defender SmartScreen の警告画面（Windows によって PC が保護されました）">
+                <div class="screenshot-caption">▲ 「詳細情報」をクリックすると右下に「実行」ボタンが現れます</div>
+              </div>
+            </div>
+
             <div class="note-box">
               <strong>反映されるメニュー位置:</strong><br>
               ・メニューバー: <code>Praat</code> &rarr; <code>日本語音声ツール (JA)</code><br>
@@ -338,9 +429,53 @@
             </div>
           </div>
 
-          <!-- Method 2: Praat Script -->
+          <!-- Method 2: macOS Installer -->
           <div class="subsection">
-            <h3 class="subsection-title">2. Praat スクリプト（install.praat）</h3>
+            <h3 class="subsection-title">2. macOS用インストーラー（.pkg）</h3>
+            <ol class="step-list">
+              <li>上部のダウンロードボタンから <strong>macOS 版（<code>Praat-JapaneseTools-Setup.pkg</code>）</strong> を取得します。</li>
+              <li>ダウンロードしたファイルをダブルクリックして実行し、画面の指示に従ってインストールを完了します（Intel / Apple Silicon 共通対応）。</li>
+              <li>Praat を起動（または再起動）します。</li>
+            </ol>
+
+            <!-- macOS Gatekeeper Alert -->
+            <div class="alert-box">
+              <div class="alert-box-title">【注意】macOS のセキュリティ警告（Gatekeeper）が表示された場合</div>
+              <p style="margin-bottom: 8px;">
+                macOS では、インターネットからダウンロードした未署名のインストーラーを開く際に<strong>「開発元を検証できないため開けません」</strong>または<strong>「悪質なソフトウェアかどうかを Apple では確認できないため開けません」</strong>と表示され、通常のダブルクリックでは起動がブロックされる場合があります。
+              </p>
+              <p style="margin-bottom: 12px;">
+                ※Apple Developer の有償公証を受けていないことによる macOS の標準セキュリティ動作です。以下のいずれかの手順で一度許可することで正常にインストールできます。
+              </p>
+              <div style="margin-bottom: 12px;">
+                <strong>方法 A: 右クリックから開く（最も簡単・推奨）</strong>
+                <ol class="step-list" style="margin-top: 6px; margin-bottom: 8px;">
+                  <li>ダウンロードした <code>Praat-JapaneseTools-Setup.pkg</code> を <strong>Control キーを押しながらクリック</strong>（または右クリック／トラックパッドの二本指タップ）します。</li>
+                  <li>表示されたメニューから <strong>「開く」</strong> を選択します。</li>
+                  <li>警告ダイアログが表示されたら、ダイアログ内の <strong>「開く」</strong> ボタンをクリックするとインストーラーが起動します。</li>
+                </ol>
+              </div>
+              <div>
+                <strong>方法 B: 「システム設定」から許可する</strong>
+                <ol class="step-list" style="margin-top: 6px; margin-bottom: 4px;">
+                  <li>画面左上のアップルメニュー（） &rarr; <strong>「システム設定」</strong>（macOS 12以前は「システム環境設定」）を開きます。</li>
+                  <li>左メニューの <strong>「プライバシーとセキュリティ」</strong> を選択し、画面を下方へスクロールします。</li>
+                  <li>「セキュリティ」欄にある「"Praat-JapaneseTools-Setup.pkg" は開発元を確認できないため〜」の横にある <strong>「このまま開く」</strong> をクリックします。</li>
+                </ol>
+              </div>
+            </div>
+
+            <div class="note-box">
+              <strong>反映されるメニュー位置:</strong><br>
+              ・メニューバー: <code>Praat</code> &rarr; <code>日本語音声ツール (JA)</code><br>
+              ・アクションボタン: Sound または TextGrid オブジェクト選択時に右側パネルに <code>日本語ツール (JA)</code> ボタンが表示されます。<br><br>
+              <strong>アンインストール:</strong> プラグインフォルダ（<code>~/Library/Preferences/Praat Prefs/plugin_JapaneseTools/</code>）内の <code>uninstall.command</code> をダブルクリックすることで、いつでも安全に登録解除・削除できます。
+            </div>
+          </div>
+
+          <!-- Method 3: Praat Script -->
+          <div class="subsection">
+            <h3 class="subsection-title">3. Praat スクリプト（install.praat）</h3>
             <p style="margin-bottom: 12px;">OS（Windows / macOS / Linux）に関わらず、Praat アプリケーション上から直接登録を行う手順です。</p>
             <ol class="step-list">
               <li>本リポジトリの <code>installer/install.praat</code> を Praat で開きます（メニューの <code>Praat</code> &rarr; <code>Open Praat script...</code> またはドラッグ＆ドロップ）。</li>
@@ -350,9 +485,9 @@
             </ol>
           </div>
 
-          <!-- Method 3: Shell / Batch Script -->
+          <!-- Method 4: Shell / Batch Script -->
           <div class="subsection">
-            <h3 class="subsection-title">3. シェルスクリプト / バッチファイル</h3>
+            <h3 class="subsection-title">4. シェルスクリプト / バッチファイル</h3>
             <p style="margin-bottom: 12px;">リポジトリを作業ディレクトリにクローンまたは展開してシンボリックリンク／ジャンクションを作成する手順です。</p>
             <p><strong>Windows の場合:</strong></p>
             <pre><code>installer\install.bat</code></pre>

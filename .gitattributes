@@ -11,3 +11,4 @@ preinstall text eol=lf
 *.xml text eol=lf
 *.html text eol=lf
 *.praat text eol=lf
+*.png binary
