@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<installer-gui-script minSpecVersion="2">
+    <title>Praat 日本語音声ツール</title>
+    <options customize="never" require-scripts="true" hostArchitectures="x86_64,arm64"/>
+    <domains enable_anywhere="false" enable_currentUserHome="true" enable_localSystem="true"/>
+    
+    <welcome file="welcome.html" mime-type="text/html"/>
+    <conclusion file="conclusion.html" mime-type="text/html"/>
+    
+    <choices-outline>
+        <line choice="default"/>
+    </choices-outline>
+    
+    <choice id="default" title="Praat 日本語音声ツール (Japanese Tools)">
+        <pkg-ref id="com.okawawaka.praat-japanese-tools"/>
+    </choice>
+    
+    <pkg-ref id="com.okawawaka.praat-japanese-tools" version="1.0.1" onConclusion="none">component.pkg</pkg-ref>
+</installer-gui-script>

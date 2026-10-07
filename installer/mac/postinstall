@@ -1,0 +1,80 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# Praat 日本語音声ツール - macOS インストーラー postinstall スクリプト
+# ==============================================================================
+
+set -e
+
+# 1. 現在の GUI ログイン（コンソール）ユーザーを安全に特定
+TARGET_USER=$(stat -f "%Su" /dev/console 2>/dev/null || echo "")
+
+if [ -z "$TARGET_USER" ] || [ "$TARGET_USER" = "root" ]; then
+    TARGET_USER=$(scutil <<< "show State:/Users/ConsoleUser" 2>/dev/null | awk '/Name :/ && !/loginwindow/ { print $3 }')
+fi
+
+if [ -z "$TARGET_USER" ] || [ "$TARGET_USER" = "root" ]; then
+    TARGET_USER=$(logname 2>/dev/null || echo "$USER")
+fi
+
+if [ -z "$TARGET_USER" ] || [ "$TARGET_USER" = "root" ]; then
+    # CI 環境などのフォールバック
+    TARGET_USER=$(whoami)
+fi
+
+# 2. ユーザーのホームディレクトリを取得
+USER_HOME=$(dscl . -read "/Users/$TARGET_USER" NFSHomeDirectory 2>/dev/null | awk '{print $2}')
+if [ -z "$USER_HOME" ]; then
+    USER_HOME=$(eval echo "~$TARGET_USER")
+fi
+
+if [ -z "$USER_HOME" ] || [ ! -d "$USER_HOME" ]; then
+    USER_HOME="$HOME"
+fi
+
+echo "[postinstall] 対象ユーザー: $TARGET_USER"
+echo "[postinstall] ホームディレクトリ: $USER_HOME"
+
+# 3. Praat 設定フォルダおよびプラグインフォルダの設定
+PRAAT_PREFS="$USER_HOME/Library/Preferences/Praat Prefs"
+PLUGIN_DIR="$PRAAT_PREFS/plugin_JapaneseTools"
+STAGING_SRC="/tmp/.praat_japanese_tools_payload"
+
+# 親ディレクトリ作成
+mkdir -p "$PRAAT_PREFS"
+
+# 既存プラグインのバックアップまたは上書きクリーンアップ
+if [ -e "$PLUGIN_DIR" ]; then
+    echo "[postinstall] 既存のプラグインフォルダを更新します: $PLUGIN_DIR"
+    rm -rf "$PLUGIN_DIR"
+fi
+
+mkdir -p "$PLUGIN_DIR"
+
+# 4. 一時展開先からプラグインフォルダへ配置
+if [ -d "$STAGING_SRC" ]; then
+    echo "[postinstall] ファイルを展開中..."
+    cp -R "$STAGING_SRC"/* "$PLUGIN_DIR"/
+    # 一時ファイルの削除
+    rm -rf "$STAGING_SRC"
+else
+    echo "[postinstall] エラー: ペイロードソース ($STAGING_SRC) が見つかりません。" >&2
+    exit 1
+fi
+
+# 5. ファイルのアクセス権と所有権の調整（一般ユーザーが読み書きできるように）
+if [ "$TARGET_USER" != "root" ]; then
+    chown -R "$TARGET_USER" "$PLUGIN_DIR" 2>/dev/null || true
+    chown "$TARGET_USER" "$PRAAT_PREFS" 2>/dev/null || true
+fi
+
+# 実行権限の付与（スクリプト・アンインストーラー用）
+chmod -R a+rX "$PLUGIN_DIR"
+if [ -f "$PLUGIN_DIR/uninstall.sh" ]; then
+    chmod +x "$PLUGIN_DIR/uninstall.sh"
+fi
+if [ -f "$PLUGIN_DIR/uninstall.command" ]; then
+    chmod +x "$PLUGIN_DIR/uninstall.command"
+fi
+
+echo "[postinstall] インストールが正常に完了しました: $PLUGIN_DIR"
+exit 0

@@ -1,4 +1,4 @@
-name: Build Windows Installer
+name: Build Installers (Windows & macOS)
 
 on:
   push:
@@ -11,14 +11,18 @@ on:
       - 'installer/**'
       - 'scripts/**'
       - 'setup.praat'
+      - '.github/workflows/build-installer.yml'
   workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
-  build:
-    name: Build Inno Setup Installer (.exe)
+  # ============================================================================
+  # 1. Windows インストーラー (.exe) のビルド
+  # ============================================================================
+  build-windows:
+    name: Build Windows Installer (.exe)
     runs-on: windows-latest
 
     steps:
@@ -41,18 +45,108 @@ jobs:
             exit 1
           }
           $item = Get-Item $exePath
-          Write-Host "Success! Created installer: $($item.FullName) ($([math]::Round($item.Length / 1KB, 2)) KB)"
+          Write-Host "Success! Created Windows installer: $($item.FullName) ($([math]::Round($item.Length / 1KB, 2)) KB)"
 
-      - name: Upload Installer as Artifact
+      - name: Upload Windows Installer as Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Praat-JapaneseTools-Setup
+          name: Praat-JapaneseTools-Setup-Windows
           path: dist/Praat-JapaneseTools-Setup.exe
           if-no-files-found: error
 
-      - name: Create Release and Upload Asset (Tag Push only)
-        if: startsWith(github.ref, 'refs/tags/v')
+  # ============================================================================
+  # 2. macOS インストーラー (.pkg) のビルド & インストール自動検証
+  # ============================================================================
+  build-macos:
+    name: Build macOS Installer (.pkg)
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build .pkg Package
+        run: |
+          chmod +x installer/build-mac-pkg.sh
+          bash installer/build-mac-pkg.sh
+
+      - name: Verify Output Exists
+        run: |
+          PKG_PATH="dist/Praat-JapaneseTools-Setup.pkg"
+          if [ ! -f "$PKG_PATH" ]; then
+            echo "Error: Package not found at $PKG_PATH"
+            exit 1
+          fi
+          echo "Success! Created macOS package: $PKG_PATH ($(du -h "$PKG_PATH" | cut -f1))"
+
+      - name: Automated Installation Test on macOS Runner
+        run: |
+          echo "=== macOS ランナー上でのテストインストールを実行 ==="
+          sudo installer -pkg dist/Praat-JapaneseTools-Setup.pkg -target /
+
+          TARGET_DIR="$HOME/Library/Preferences/Praat Prefs/plugin_JapaneseTools"
+          echo "検証対象ディレクトリ: $TARGET_DIR"
+
+          if [ ! -f "$TARGET_DIR/setup.praat" ]; then
+            echo "エラー: setup.praat がプラグインディレクトリに存在しません!"
+            exit 1
+          fi
+
+          if [ ! -d "$TARGET_DIR/scripts" ]; then
+            echo "エラー: scripts フォルダがプラグインディレクトリに存在しません!"
+            exit 1
+          fi
+
+          if [ ! -f "$TARGET_DIR/uninstall.sh" ] || [ ! -f "$TARGET_DIR/uninstall.command" ]; then
+            echo "エラー: アンインストーラーが同梱されていません!"
+            exit 1
+          fi
+
+          echo "========================================================"
+          echo "  【検証成功】macOS へのプラグイン配置テストが正常に完了しました！"
+          echo "========================================================"
+          ls -la "$TARGET_DIR"
+
+      - name: Upload macOS Installer as Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Praat-JapaneseTools-Setup-macOS
+          path: dist/Praat-JapaneseTools-Setup.pkg
+          if-no-files-found: error
+
+  # ============================================================================
+  # 3. GitHub Releases への自動公開 (タグプッシュ時のみ実行)
+  # ============================================================================
+  release:
+    name: Publish Release (Tag Push only)
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [build-windows, build-macos]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download Windows Installer Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: Praat-JapaneseTools-Setup-Windows
+          path: release-assets
+
+      - name: Download macOS Installer Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: Praat-JapaneseTools-Setup-macOS
+          path: release-assets
+
+      - name: List Release Files
+        run: |
+          ls -lh release-assets/
+
+      - name: Create Release and Upload Assets
         uses: softprops/action-gh-release@v2
         with:
-          files: dist/Praat-JapaneseTools-Setup.exe
+          files: |
+            release-assets/Praat-JapaneseTools-Setup.exe
+            release-assets/Praat-JapaneseTools-Setup.pkg
           generate_release_notes: true
