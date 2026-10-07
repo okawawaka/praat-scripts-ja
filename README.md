@@ -94,12 +94,33 @@ Praat をローカル環境にインストールすることなく、ブラウ�
    - メニューバーの `Praat` -> `日本語音声ツール (JA)` に各種コマンドが登録されます。
    - オブジェクトウィンドウで Sound または TextGrid を選択した際、右側のアクションパネルにも `日本語ツール (JA)` が表示されます。
 
+> [!NOTE]
+> **「Windows によって PC が保護されました」と表示される場合**:  
+> 初回実行時、Microsoft Defender SmartScreen により警告画面が表示される場合があります。画面内の「詳細情報」をクリックし、右下の「実行」ボタンを押すことで通常通りインストールを進められます。
+
 **アンインストール:**  
 Windows の「設定」 -> 「アプリ」 -> 「インストールされているアプリ」から通常の手順でアンインストールできます。
 
 ---
 
-#### 2. Praat スクリプト（install.praat）
+#### 2. macOS用インストーラー（.pkg）
+
+1. [Releases](https://github.com/okawawaka/praat-scripts-ja/releases/latest) から `Praat-JapaneseTools-Setup.pkg` をダウンロードします。
+2. ダウンロードしたファイルをダブルクリックして開き、画面の案内に従ってインストールを完了します（Intel / Apple Silicon 共通対応）。
+   - プラグインは `~/Library/Preferences/Praat Prefs/plugin_JapaneseTools` へ自動配置されます。
+3. Praat を起動（または再起動）します。
+   - メニューバーの `Praat` -> `日本語音声ツール (JA)` およびアクションパネルに各種コマンドが登録されます。
+
+> [!NOTE]
+> **「開発元を検証できないため開けません」と表示される場合（Gatekeeper）**:  
+> macOS のセキュリティ制限により警告が出る場合は、ダウンロードした `.pkg` ファイルを **Control キーを押しながらクリック（または右クリック）して「開く」を選択** し、確認ダイアログで再度「開く」をクリックしてください。
+
+**アンインストール:**  
+プラグインフォルダ（`~/Library/Preferences/Praat Prefs/plugin_JapaneseTools/`）内の `uninstall.command` をダブルクリックして実行することで削除できます。
+
+---
+
+#### 3. Praat スクリプト（install.praat）
 
 OS（Windows / macOS / Linux）を問わず、Praat 上からインストールを実行できます。
 
@@ -110,7 +131,7 @@ OS（Windows / macOS / Linux）を問わず、Praat 上からインストール�
 
 ---
 
-#### 3. シェルスクリプト / バッチファイル
+#### 4. シェルスクリプト / バッチファイル
 
 リポジトリを作業ディレクトリにクローンまたは展開した状態で、`installer/` 配下のスクリプトを実行してシンボリックリンクまたはジャンクションを作成します。
 
