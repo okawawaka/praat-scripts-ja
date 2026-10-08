@@ -17,6 +17,8 @@ Add menu command: "Objects", "Praat", "無音・ポーズの自動検出...", "�
 Add menu command: "Objects", "Praat", "F1-F2 母音図の自動描画...", "日本語音声ツール (JA)", 1, "scripts/visualization/draw_formant_chart.praat"
 Add menu command: "Objects", "Praat", "サンプリングレートの一括変更...", "日本語音声ツール (JA)", 1, "scripts/batch-processing/change_sample_rate.praat"
 Add menu command: "Objects", "Praat", "ステレオ→モノラル一括変換...", "日本語音声ツール (JA)", 1, "scripts/batch-processing/convert_stereo_to_mono.praat"
+Add menu command: "Objects", "Praat", "バージョン情報...", "日本語音声ツール (JA)", 1, "scripts/about.praat"
+
 
 # ------------------------------------------------------------------------------
 # 2. 動的アクションメニュー（Sound 単独選択時）

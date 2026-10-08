@@ -17,6 +17,7 @@ beginPause: "日本語音声分析スクリプト一覧"
         option: "6. F1-F2 母音図の自動描画"
         option: "7. サンプリングレートの一括変更"
         option: "8. ステレオ→モノラル一括変換"
+        option: "9. バージョン情報 (About)"
 clicked = endPause: "キャンセル", "起動", 2, 1
 
 if clicked = 1
@@ -39,4 +40,6 @@ elsif tool = 7
     runScript: "batch-processing/change_sample_rate.praat"
 elsif tool = 8
     runScript: "batch-processing/convert_stereo_to_mono.praat"
+elsif tool = 9
+    runScript: "about.praat"
 endif
