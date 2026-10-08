@@ -25,7 +25,6 @@ Add menu command: "Objects", "Praat", "バージョン情報...", "日本語音�
 # ------------------------------------------------------------------------------
 Add action command: "Sound", 1, "", 0, "", 0, "日本語ツール (JA)", "", 0, ""
 Add action command: "Sound", 1, "", 0, "", 0, "無音・ポーズ自動検出...", "日本語ツール (JA)", 1, "scripts/segmentation/mark_pauses.praat"
-Add action command: "Sound", 1, "", 0, "", 0, "ピッチデータ抽出...", "日本語ツール (JA)", 1, "scripts/acoustic-analysis/collect_pitch_data.praat"
 Add action command: "Sound", 1, "", 0, "", 0, "サンプリングレート変更...", "日本語ツール (JA)", 1, "scripts/batch-processing/change_sample_rate.praat"
 Add action command: "Sound", 1, "", 0, "", 0, "ステレオをモノラル変換...", "日本語ツール (JA)", 1, "scripts/batch-processing/convert_stereo_to_mono.praat"
 
