@@ -6,7 +6,7 @@
 # ==============================================================================
 
 pluginName$ = "Praat日本語版スクリプト (praat-scripts-ja)"
-pluginVersion$ = "1.0.1"
+pluginVersion$ = "1.1.0"
 
 # OS環境の判定
 if windows

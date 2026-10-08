@@ -9,7 +9,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 PKG_IDENTIFIER="com.okawawaka.praat-japanese-tools"
-VERSION="1.0.1"
+VERSION="1.1.0"
 OUTPUT_DIR="$REPO_ROOT/dist"
 OUTPUT_PKG="$OUTPUT_DIR/Praat-JapaneseTools-Setup.pkg"
 

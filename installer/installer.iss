@@ -1,10 +1,10 @@
-﻿; ==============================================================================
+; ==============================================================================
 ; Inno Setup Script: Praat 日本語音声ツール (praat-scripts-ja)
 ; 公式リポジトリ: https://github.com/okawawaka/praat-scripts-ja
 ; ==============================================================================
 
 #define MyAppName "Praat 日本語音声ツール"
-#define MyAppVersion "1.0.1"
+#define MyAppVersion "1.1.0"
 #define MyAppPublisher "okawawaka"
 #define MyAppURL "https://github.com/okawawaka/praat-scripts-ja"
 
