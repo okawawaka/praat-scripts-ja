@@ -16,8 +16,8 @@ Mietta Lennes 氏の **SpeCT (Speech Corpus Toolkit for Praat)** および [Fiel
    - 旧形式のコマンドを最新の `selectObject` 等の関数型構文に更新し、警告なく動作するようにしています。
 3. **ファイルパスの処理**:
    - 空白や日本語を含むディレクトリパスでもエラーが発生しにくいよう配慮しています。
-4. **TSV形式での出力**:
-   - 分析結果などの出力ファイルはタブ区切りテキスト（TSV）形式に統一しており、表計算ソフトやR等ですぐに読み込めます。
+4. **CSV / TSV形式での入出力に対応**:
+   - 分析結果などの出力ファイルはカンマ区切り（CSV）およびタブ区切り（TSV）形式に対応しており、Excel等の表計算ソフトやR、Python等ですぐに読み込めます。母音図描画スクリプトもCSV/TSVの両方の入力に対応しています。
 
 ---
 
@@ -36,7 +36,7 @@ Mietta Lennes 氏の **SpeCT (Speech Corpus Toolkit for Praat)** および [Fiel
 
 | スクリプト名 | 主な用途 |
 | :--- | :--- |
-| **[`collect_formant_data.praat`](scripts/acoustic-analysis/collect_formant_data.praat)** | 各母音区間の中央点におけるフォルマント（F1〜F5）と帯域幅を測定し、TSVに出力する |
+| **[`collect_formant_data.praat`](scripts/acoustic-analysis/collect_formant_data.praat)** | 各母音区間の中央点におけるフォルマント（F1〜F5）と帯域幅を測定し、CSV/TSVに出力する |
 | **[`collect_pitch_data.praat`](scripts/acoustic-analysis/collect_pitch_data.praat)** | 各区間のピッチ（F0）の平均値・中央値・最大/最小値・標準偏差を集計する |
 | **[`calculate_segment_durations.praat`](scripts/acoustic-analysis/calculate_segment_durations.praat)** | 各区間の開始時刻・終了時刻・継続時間（秒/ミリ秒）を集計する |
 
@@ -55,7 +55,7 @@ Mietta Lennes 氏の **SpeCT (Speech Corpus Toolkit for Praat)** および [Fiel
 
 | スクリプト名 | 主な用途 |
 | :--- | :--- |
-| **[`draw_formant_chart.praat`](scripts/visualization/draw_formant_chart.praat)** | 抽出したフォルマントデータから F1-F2 母音図を描画する |
+| **[`draw_formant_chart.praat`](scripts/visualization/draw_formant_chart.praat)** | 抽出したフォルマントデータ（CSV/TSV）から F1-F2 母音図を描画する |
 
 ---
 

@@ -2,7 +2,7 @@
 # スクリプト名: draw_formant_chart.praat (F1-F2 母音図の自動描画)
 # 
 # 【概要】
-# フォルマントデータ（TSVファイルまたは選択中のTable）を読み込み、
+# フォルマントデータ（CSV/TSVファイルまたは選択中のTable）を読み込み、
 # Praat Picture ウィンドウ上に F1-F2 母音図（音響母音散布図）をプロットします。
 # 音声学の慣例に従い、軸は逆方向（F1: 下から上へ減少、F2: 左から右へ減少）
 # で描画され、舌の位置（高低・前後）に対応した直感的な母音空間を可視化できます。
@@ -12,7 +12,7 @@
 #    Praat上で Table オブジェクトを選択している場合、パス指定なしで即座にプロットします。
 # 2. 【ファイル選択ダイアログモード】
 #    Praat上で何も選択していない場合、自動的にマウスで選べる「ファイル選択ダイアログ」
-#    が起動します。TSVファイルを手動パス入力なしで開いてプロットします。
+#    が起動します。CSVまたはTSVファイルを手動パス入力なしで開いてプロットします。
 #
 # 【原典クレジット】
 # ベース元: Mietta Lennes (SpeCT: draw_formant_chart.praat)
@@ -28,11 +28,16 @@ is_temp_table = 0
 if num_table > 0
     table_id = selected("Table", 1)
 else
-    tsv_path$ = chooseReadFile$: "フォルマントデータ(TSV)を選択してください"
-    if tsv_path$ == ""
+    data_path$ = chooseReadFile$: "フォルマントデータ (CSV または TSV) を選択してください"
+    if data_path$ == ""
         exitScript: "処理がキャンセルされました。"
     endif
-    table_id = Read Table from tab-separated file: tsv_path$
+    
+    if right$(data_path$, 4) == ".csv" or right$(data_path$, 4) == ".CSV"
+        table_id = Read Table from comma-separated file: data_path$
+    else
+        table_id = Read Table from tab-separated file: data_path$
+    endif
     is_temp_table = 1
 endif
 

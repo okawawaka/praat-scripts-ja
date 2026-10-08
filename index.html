@@ -366,7 +366,7 @@
         言語学・音声学における音響分析処理を自動化するための Praat スクリプト集および拡張機能。
       </div>
       <p class="hero-description">
-        Mietta Lennes 氏の SpeCT (Speech Corpus Toolkit for Praat) および FieldDB/Praat-Scripts を基に、ダイアログの日本語化、Praat 6.x 系関数構文への最適化、および TSV 形式でのデータ出力に対応しています。
+        Mietta Lennes 氏の SpeCT (Speech Corpus Toolkit for Praat) および FieldDB/Praat-Scripts を基に、ダイアログの日本語化、Praat 6.x 系関数構文への最適化、および CSV / TSV 形式でのデータ入出力に対応しています。
       </p>
 
       <div class="download-block">
@@ -515,7 +515,7 @@
             <li>実行対象のスクリプト（例: <code>scripts/segmentation/extract_intervals_to_wav.praat</code>）を選択して開きます。</li>
             <li>スクリプトエディタのメニュー <code>Run</code> &rarr; <code>Run</code>（ショートカット: <code>Ctrl + R</code> / <code>Cmd + R</code>）を実行します。</li>
             <li>パラメータ設定ダイアログが表示されるため、対象音声や TextGrid が配置されたディレクトリパス、Tier 番号等を指定して <code>OK</code> を押下します。</li>
-            <li>処理結果は指定した出力ディレクトリに TSV ファイルまたは WAV ファイル等として保存されます。</li>
+            <li>処理結果は指定した出力ディレクトリに CSV / TSV ファイルまたは WAV ファイル等として保存されます。</li>
           </ol>
         </div>
       </div>
@@ -527,7 +527,7 @@
         <h2 class="section-title">収録スクリプト</h2>
         <div class="section-content">
           <p style="margin-bottom: 16px;">
-            各スクリプトは <code>scripts/</code> 配下の機能別ディレクトリに格納されています。出力ファイル形式は集計・後続処理に適したタブ区切りテキスト（TSV）に統一されています。
+            各スクリプトは <code>scripts/</code> 配下の機能別ディレクトリに格納されています。分析結果の出力は表計算ソフトやR/Python等で扱いやすい CSV（カンマ区切り）および TSV（タブ区切り）形式の両方に対応しています。
           </p>
 
           <div class="table-container">
@@ -586,8 +586,8 @@
                 <tr>
                   <td>可視化</td>
                   <td class="code-cell">draw_formant_chart.praat</td>
-                  <td>測定されたフォルマントデータから F1-F2 母音散布図を描画</td>
-                  <td>Table</td>
+                  <td>測定されたフォルマントデータ（CSV/TSV）から F1-F2 母音散布図を描画</td>
+                  <td>Table（または CSV / TSV）</td>
                 </tr>
               </tbody>
             </table>

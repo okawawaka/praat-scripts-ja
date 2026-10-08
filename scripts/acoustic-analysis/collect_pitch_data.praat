@@ -12,7 +12,7 @@
 #    パス指定なしで即座に分析し、画面（Infoウィンドウ）に結果を表示します。
 # 2. 【フォルダ一括処理モード】
 #    Praat上で何も選択していない場合、自動的にマウスで選べる「フォルダ参照ダイアログ」
-#    が起動します。フォルダ内の同名ペアを一括集計し、同じフォルダ内に "pitch_results.tsv"
+#    が起動します。フォルダ内の同名ペアを一括集計し、同じフォルダ内に "pitch_results.csv"（または .tsv）
 #    を自動保存します。
 #
 # 【原典クレジット】
@@ -62,8 +62,8 @@ if num_sound > 0 and num_tg > 0
         positive: "pitch_floor_hz", 75.0
         comment: "ピッチ探索上限（男性: 300, 女性・子供: 500〜600 Hz）:"
         positive: "pitch_ceiling_hz", 500.0
-        comment: "結果をTSVファイルとしても保存する:"
-        boolean: "save_to_tsv", 0
+        comment: "結果をファイル(CSV/TSV)としても保存する:"
+        boolean: "save_to_file", 0
     clicked = endPause: "キャンセル", "分析を実行", 2, 1
     
     if clicked = 1
@@ -74,14 +74,21 @@ if num_sound > 0 and num_tg > 0
     skip_empty = skip_empty_labels
     p_floor = pitch_floor_hz
     p_ceil = pitch_ceiling_hz
-    do_save_tsv = save_to_tsv
+    do_save_file = save_to_file
     
-    tsv_out_file$ = ""
-    if do_save_tsv
-        tsv_out_file$ = chooseWriteFile$: "保存先のTSVファイル名を指定してください", "pitch_results.tsv"
-        if tsv_out_file$ == ""
-            do_save_tsv = 0
+    out_file$ = ""
+    if do_save_file
+        out_file$ = chooseWriteFile$: "保存先のファイル名を指定してください (.csv または .tsv)", "pitch_results.csv"
+        if out_file$ == ""
+            do_save_file = 0
         endif
+    endif
+
+    sep$ = tab$
+    is_csv = 0
+    if right$(out_file$, 4) == ".csv" or right$(out_file$, 4) == ".CSV"
+        sep$ = ","
+        is_csv = 1
     endif
 
     sound_id = selected("Sound", 1)
@@ -91,11 +98,12 @@ if num_sound > 0 and num_tg > 0
     sound_name$ = selected$("Sound")
     
     clearinfo
-    header$ = "ObjectName" + tab$ + "IntervalIndex" + tab$ + "Label" + tab$ + "StartTime_s" + tab$ + "EndTime_s" + tab$ + "Duration_ms" + tab$ + "MeanPitch_Hz" + tab$ + "MedianPitch_Hz" + tab$ + "MinPitch_Hz" + tab$ + "MaxPitch_Hz" + tab$ + "StDevPitch_Hz"
-    appendInfoLine: header$
+    header_display$ = "ObjectName" + tab$ + "IntervalIndex" + tab$ + "Label" + tab$ + "StartTime_s" + tab$ + "EndTime_s" + tab$ + "Duration_ms" + tab$ + "MeanPitch_Hz" + tab$ + "MedianPitch_Hz" + tab$ + "MinPitch_Hz" + tab$ + "MaxPitch_Hz" + tab$ + "StDevPitch_Hz"
+    header_file$ = "ObjectName" + sep$ + "IntervalIndex" + sep$ + "Label" + sep$ + "StartTime_s" + sep$ + "EndTime_s" + sep$ + "Duration_ms" + sep$ + "MeanPitch_Hz" + sep$ + "MedianPitch_Hz" + sep$ + "MinPitch_Hz" + sep$ + "MaxPitch_Hz" + sep$ + "StDevPitch_Hz"
+    appendInfoLine: header_display$
     
-    if do_save_tsv and tsv_out_file$ <> ""
-        writeFileLine: tsv_out_file$, header$
+    if do_save_file and out_file$ <> ""
+        writeFileLine: out_file$, header_file$
     endif
     
     # ピッチオブジェクト生成
@@ -162,11 +170,20 @@ if num_sound > 0 and num_tg > 0
                     endif
                     
                     dur_ms = duration_s * 1000
-                    row$ = sound_name$ + tab$ + string$(j) + tab$ + clean_label$ + tab$ + fixed$(start_t, 4) + tab$ + fixed$(end_t, 4) + tab$ + fixed$(dur_ms, 2) + tab$ + mean_str$ + tab$ + med_str$ + tab$ + min_str$ + tab$ + max_str$ + tab$ + std_str$
-                    appendInfoLine: row$
+                    row_display$ = sound_name$ + tab$ + string$(j) + tab$ + clean_label$ + tab$ + fixed$(start_t, 4) + tab$ + fixed$(end_t, 4) + tab$ + fixed$(dur_ms, 2) + tab$ + mean_str$ + tab$ + med_str$ + tab$ + min_str$ + tab$ + max_str$ + tab$ + std_str$
+                    appendInfoLine: row_display$
                     
-                    if do_save_tsv and tsv_out_file$ <> ""
-                        appendFileLine: tsv_out_file$, row$
+                    if do_save_file and out_file$ <> ""
+                        file_label$ = clean_label$
+                        if is_csv and (index(file_label$, ",") > 0 or index(file_label$, """") > 0)
+                            file_label$ = """" + replace_regex$(file_label$, """", """""", 0) + """"
+                        endif
+                        file_sound$ = sound_name$
+                        if is_csv and (index(file_sound$, ",") > 0 or index(file_sound$, """") > 0)
+                            file_sound$ = """" + replace_regex$(file_sound$, """", """""", 0) + """"
+                        endif
+                        row_file$ = file_sound$ + sep$ + string$(j) + sep$ + file_label$ + sep$ + fixed$(start_t, 4) + sep$ + fixed$(end_t, 4) + sep$ + fixed$(dur_ms, 2) + sep$ + mean_str$ + sep$ + med_str$ + sep$ + min_str$ + sep$ + max_str$ + sep$ + std_str$
+                        appendFileLine: out_file$, row_file$
                     endif
                 endif
             endfor
@@ -193,7 +210,7 @@ else
         folder$ = folder$ + "/"
     endif
     
-    default_tsv$ = folder$ + "pitch_results.tsv"
+    default_out$ = folder$ + "pitch_results.csv"
     
     beginPause: "ピッチ分析（フォルダ一括処理）"
         comment: "選択フォルダ: " + folder$
@@ -205,8 +222,8 @@ else
         positive: "pitch_floor_hz", 75.0
         comment: "ピッチ探索上限（男性: 300, 女性・子供: 500〜600 Hz）:"
         positive: "pitch_ceiling_hz", 500.0
-        comment: "結果保存先のTSVファイル名:"
-        sentence: "result_file", default_tsv$
+        comment: "結果保存先ファイル名（.csv または .tsv）:"
+        sentence: "result_file", default_out$
     clicked = endPause: "キャンセル", "一括処理を実行", 2, 1
     
     if clicked = 1
@@ -220,13 +237,21 @@ else
     out_file$ = result_file$
     
     if out_file$ == ""
-        out_file$ = default_tsv$
+        out_file$ = default_out$
+    endif
+
+    sep$ = tab$
+    is_csv = 0
+    if right$(out_file$, 4) == ".csv" or right$(out_file$, 4) == ".CSV"
+        sep$ = ","
+        is_csv = 1
     endif
     
     clearinfo
-    header$ = "Filename" + tab$ + "IntervalIndex" + tab$ + "Label" + tab$ + "StartTime_s" + tab$ + "EndTime_s" + tab$ + "Duration_ms" + tab$ + "MeanPitch_Hz" + tab$ + "MedianPitch_Hz" + tab$ + "MinPitch_Hz" + tab$ + "MaxPitch_Hz" + tab$ + "StDevPitch_Hz"
-    appendInfoLine: header$
-    writeFileLine: out_file$, header$
+    header_display$ = "Filename" + tab$ + "IntervalIndex" + tab$ + "Label" + tab$ + "StartTime_s" + tab$ + "EndTime_s" + tab$ + "Duration_ms" + tab$ + "MeanPitch_Hz" + tab$ + "MedianPitch_Hz" + tab$ + "MinPitch_Hz" + tab$ + "MaxPitch_Hz" + tab$ + "StDevPitch_Hz"
+    header_file$ = "Filename" + sep$ + "IntervalIndex" + sep$ + "Label" + sep$ + "StartTime_s" + sep$ + "EndTime_s" + sep$ + "Duration_ms" + sep$ + "MeanPitch_Hz" + sep$ + "MedianPitch_Hz" + sep$ + "MinPitch_Hz" + sep$ + "MaxPitch_Hz" + sep$ + "StDevPitch_Hz"
+    appendInfoLine: header_display$
+    writeFileLine: out_file$, header_file$
     
     file_list = Create Strings as file list: "fileList", folder$ + "*.wav"
     num_files = Get number of strings
@@ -315,9 +340,19 @@ else
                             endif
                             
                             dur_ms = duration_s * 1000
-                            row$ = basename$ + tab$ + string$(j) + tab$ + clean_label$ + tab$ + fixed$(start_t, 4) + tab$ + fixed$(end_t, 4) + tab$ + fixed$(dur_ms, 2) + tab$ + mean_str$ + tab$ + med_str$ + tab$ + min_str$ + tab$ + max_str$ + tab$ + std_str$
-                            appendInfoLine: row$
-                            appendFileLine: out_file$, row$
+                            row_display$ = basename$ + tab$ + string$(j) + tab$ + clean_label$ + tab$ + fixed$(start_t, 4) + tab$ + fixed$(end_t, 4) + tab$ + fixed$(dur_ms, 2) + tab$ + mean_str$ + tab$ + med_str$ + tab$ + min_str$ + tab$ + max_str$ + tab$ + std_str$
+                            appendInfoLine: row_display$
+                            
+                            file_label$ = clean_label$
+                            if is_csv and (index(file_label$, ",") > 0 or index(file_label$, """") > 0)
+                                file_label$ = """" + replace_regex$(file_label$, """", """""", 0) + """"
+                            endif
+                            file_base$ = basename$
+                            if is_csv and (index(file_base$, ",") > 0 or index(file_base$, """") > 0)
+                                file_base$ = """" + replace_regex$(file_base$, """", """""", 0) + """"
+                            endif
+                            row_file$ = file_base$ + sep$ + string$(j) + sep$ + file_label$ + sep$ + fixed$(start_t, 4) + sep$ + fixed$(end_t, 4) + sep$ + fixed$(dur_ms, 2) + sep$ + mean_str$ + sep$ + med_str$ + sep$ + min_str$ + sep$ + max_str$ + sep$ + std_str$
+                            appendFileLine: out_file$, row_file$
                         endif
                     endfor
                 endif
