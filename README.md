@@ -1,10 +1,10 @@
 # Praat Scripts (日本語解説版 / Japanese Edition)
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
-[![Praat: 6.0+](https://img.shields.io/badge/Praat-6.0%2B-green.svg)](https://www.fon.hum.uva.nl/praat/)
+[![Praat: 6.x / 7.x](https://img.shields.io/badge/Praat-6.x%20%2F%207.x-green.svg)](https://www.fon.hum.uva.nl/praat/)
 
 言語学・音声学・音響分析のための日本語解説付き Praat スクリプト集です。  
-Mietta Lennes 氏の **SpeCT (Speech Corpus Toolkit for Praat)** および [FieldDB/Praat-Scripts](https://github.com/FieldDB/Praat-Scripts) をベースに、ダイアログの日本語化、スクリプト内解説の追加、および Praat 6.x 系構文へのリファクタリングを行っています。
+Mietta Lennes 氏の **SpeCT (Speech Corpus Toolkit for Praat)** および [FieldDB/Praat-Scripts](https://github.com/FieldDB/Praat-Scripts) をベースに、ダイアログの日本語化、スクリプト内解説の追加、および Praat 6.x / 7.x 系構文へのリファクタリング（最新の Praat 7.x にも完全対応）を行っています。
 
 ---
 
@@ -12,8 +12,8 @@ Mietta Lennes 氏の **SpeCT (Speech Corpus Toolkit for Praat)** および [Fiel
 
 1. **ダイアログの日本語化**:
    - スクリプト実行時のパラメータ設定画面を日本語化しています。
-2. **Praat 6.x 構文への対応**:
-   - 旧形式のコマンドを最新の `selectObject` 等の関数型構文に更新し、警告なく動作するようにしています。
+2. **Praat 6.x および最新の 7.x 構文への対応**:
+   - 旧形式のコマンドを最新の `selectObject` 等の関数型構文に更新しており、Praat 6.x 系はもちろん最新の Praat 7.x 系でも警告なく動作します。
 3. **ファイルパスの処理**:
    - 空白や日本語を含むディレクトリパスでもエラーが発生しにくいよう配慮しています。
 4. **CSV / TSV形式での入出力に対応**:
@@ -182,5 +182,5 @@ bash installer/install.sh
 - **オリジナルスクリプト**:
   - Mietta Lennes 氏 (University of Helsinki) — [SpeCT (Speech Corpus Toolkit for Praat)](http://www.helsinki.fi/~lennes/praat-scripts/)
   - [FieldDB/Praat-Scripts](https://github.com/FieldDB/Praat-Scripts)
-- **日本語化・Praat 6.x 対応**:
+- **日本語化・Praat 6.x / 7.x 対応**:
   - [okawawaka](https://github.com/okawawaka)
