@@ -87,7 +87,7 @@ if num_sound > 0 and num_tg > 0
                         selectObject: sound_id
                         part = Extract part: start_t, end_t, "rectangular", 1, "no"
                         
-                        safe_label$ = replace_regex$(clean_label$, "[\/\\:\*\?\"<>\|]", "_", 0)
+                        safe_label$ = replace_regex$(clean_label$, "[\/\\:\*\?""<>\|]", "_", 0)
                         if safe_label$ == ""
                             safe_label$ = "interval"
                         endif
@@ -207,7 +207,7 @@ else
                                 selectObject: sound
                                 part = Extract part: start_t, end_t, "rectangular", 1, "no"
                                 
-                                safe_label$ = replace_regex$(clean_label$, "[\/\\:\*\?\"<>\|]", "_", 0)
+                                safe_label$ = replace_regex$(clean_label$, "[\/\\:\*\?""<>\|]", "_", 0)
                                 if safe_label$ == ""
                                     safe_label$ = "interval"
                                 endif
