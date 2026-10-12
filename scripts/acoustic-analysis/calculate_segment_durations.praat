@@ -38,8 +38,10 @@ if num_selected > 0
         boolean: "skip_empty_intervals", 0
         comment: "TextGrid内に継続時間のTierを追加して書き込む:"
         boolean: "write_to_textgrid", 0
-        comment: "結果をファイル(CSV/TSV)としても保存する:"
-        boolean: "save_to_file", 0
+        comment: "TSVで保存（タブ区切り .tsv）:"
+        boolean: "save_to_tsv", 0
+        comment: "CSVで保存（カンマ区切り .csv）:"
+        boolean: "save_to_csv", 0
     clicked = endPause: "キャンセル", "分析を実行", 2, 1
     
     if clicked = 1
@@ -49,21 +51,27 @@ if num_selected > 0
     target_tier = tier_number
     skip_empty = skip_empty_intervals
     do_write_tg = write_to_textgrid
-    do_save_file = save_to_file
+    do_save_tsv = save_to_tsv
+    do_save_csv = save_to_csv
     
-    out_file$ = ""
-    if do_save_file
-        out_file$ = chooseWriteFile$: "保存先のファイル名を指定してください (.csv または .tsv)", "duration_results.csv"
-        if out_file$ == ""
-            do_save_file = 0
+    tsv_out_file$ = ""
+    if do_save_tsv
+        tsv_out_file$ = chooseWriteFile$: "TSVファイルの保存先を指定してください", "duration_results.tsv"
+        if tsv_out_file$ == ""
+            do_save_tsv = 0
+        elsif right$(tsv_out_file$, 4) <> ".tsv" and right$(tsv_out_file$, 4) <> ".TSV"
+            tsv_out_file$ = tsv_out_file$ + ".tsv"
         endif
     endif
 
-    sep$ = tab$
-    is_csv = 0
-    if right$(out_file$, 4) == ".csv" or right$(out_file$, 4) == ".CSV"
-        sep$ = ","
-        is_csv = 1
+    csv_out_file$ = ""
+    if do_save_csv
+        csv_out_file$ = chooseWriteFile$: "CSVファイルの保存先を指定してください", "duration_results.csv"
+        if csv_out_file$ == ""
+            do_save_csv = 0
+        elsif right$(csv_out_file$, 4) <> ".csv" and right$(csv_out_file$, 4) <> ".CSV"
+            csv_out_file$ = csv_out_file$ + ".csv"
+        endif
     endif
 
     # 選択されている全オブジェクトのIDを取得
@@ -73,12 +81,15 @@ if num_selected > 0
 
     # Praat画面の初期化と見出し出力
     clearinfo
-    header_display$ = "ObjectName" + tab$ + "IntervalIndex" + tab$ + "Label" + tab$ + "StartTime_s" + tab$ + "EndTime_s" + tab$ + "Duration_s" + tab$ + "Duration_ms"
-    header_file$ = "ObjectName" + sep$ + "IntervalIndex" + sep$ + "Label" + sep$ + "StartTime_s" + sep$ + "EndTime_s" + sep$ + "Duration_s" + sep$ + "Duration_ms"
-    appendInfoLine: header_display$
+    header_tsv$ = "ObjectName" + tab$ + "IntervalIndex" + tab$ + "Label" + tab$ + "StartTime_s" + tab$ + "EndTime_s" + tab$ + "Duration_s" + tab$ + "Duration_ms"
+    header_csv$ = "ObjectName,IntervalIndex,Label,StartTime_s,EndTime_s,Duration_s,Duration_ms"
+    appendInfoLine: header_tsv$
     
-    if do_save_file and out_file$ <> ""
-        writeFileLine: out_file$, header_file$
+    if do_save_tsv and tsv_out_file$ <> ""
+        writeFileLine: tsv_out_file$, header_tsv$
+    endif
+    if do_save_csv and csv_out_file$ <> ""
+        writeFileLine: csv_out_file$, header_csv$
     endif
     
     total_intervals = 0
@@ -118,20 +129,24 @@ if num_selected > 0
                     clean_label$ = replace_regex$(label$, "^\s+|\s+$", "", 0)
                     
                     if not (skip_empty and clean_label$ == "")
-                        row_display$ = name$ + tab$ + string$(j) + tab$ + clean_label$ + tab$ + start_str$ + tab$ + end_str$ + tab$ + dur_s_str$ + tab$ + dur_ms_str$
-                        appendInfoLine: row_display$
+                        row_tsv$ = name$ + tab$ + string$(j) + tab$ + clean_label$ + tab$ + start_str$ + tab$ + end_str$ + tab$ + dur_s_str$ + tab$ + dur_ms_str$
+                        appendInfoLine: row_tsv$
                         
-                        if do_save_file and out_file$ <> ""
-                            file_label$ = clean_label$
-                            if is_csv and (index(file_label$, ",") > 0 or index(file_label$, """") > 0)
-                                file_label$ = """" + replace_regex$(file_label$, """", """""", 0) + """"
+                        if do_save_tsv and tsv_out_file$ <> ""
+                            appendFileLine: tsv_out_file$, row_tsv$
+                        endif
+                        
+                        if do_save_csv and csv_out_file$ <> ""
+                            csv_label$ = clean_label$
+                            if index(csv_label$, ",") > 0 or index(csv_label$, """") > 0
+                                csv_label$ = """" + replace_regex$(csv_label$, """", """""", 0) + """"
                             endif
-                            file_name$ = name$
-                            if is_csv and (index(file_name$, ",") > 0 or index(file_name$, """") > 0)
-                                file_name$ = """" + replace_regex$(file_name$, """", """""", 0) + """"
+                            csv_name$ = name$
+                            if index(csv_name$, ",") > 0 or index(csv_name$, """") > 0
+                                csv_name$ = """" + replace_regex$(csv_name$, """", """""", 0) + """"
                             endif
-                            row_file$ = file_name$ + sep$ + string$(j) + sep$ + file_label$ + sep$ + start_str$ + sep$ + end_str$ + sep$ + dur_s_str$ + sep$ + dur_ms_str$
-                            appendFileLine: out_file$, row_file$
+                            row_csv$ = csv_name$ + "," + string$(j) + "," + csv_label$ + "," + start_str$ + "," + end_str$ + "," + dur_s_str$ + "," + dur_ms_str$
+                            appendFileLine: csv_out_file$, row_csv$
                         endif
                         total_intervals = total_intervals + 1
                         
@@ -176,7 +191,8 @@ else
         folder$ = folder$ + "/"
     endif
     
-    default_out$ = folder$ + "duration_results.csv"
+    tsv_out_file$ = folder$ + "duration_results.tsv"
+    csv_out_file$ = folder$ + "duration_results.csv"
     
     beginPause: "区間継続時間の計算（フォルダ一括処理）"
         comment: "選択フォルダ: " + folder$
@@ -188,8 +204,10 @@ else
         boolean: "skip_empty_intervals", 0
         comment: "TextGridファイル自体にも継続時間Tierを追加・上書き保存する:"
         boolean: "write_to_textgrid", 0
-        comment: "結果保存先ファイル名（.csv または .tsv）:"
-        sentence: "result_file", default_out$
+        comment: "TSVで保存 (duration_results.tsv):"
+        boolean: "save_to_tsv", 1
+        comment: "CSVで保存 (duration_results.csv):"
+        boolean: "save_to_csv", 1
     clicked = endPause: "キャンセル", "一括処理を実行", 2, 1
     
     if clicked = 1
@@ -200,26 +218,21 @@ else
     ext$ = extension$
     skip_empty = skip_empty_intervals
     do_write_tg = write_to_textgrid
-    out_file$ = result_file$
-    
-    if out_file$ == ""
-        out_file$ = default_out$
-    endif
-
-    sep$ = tab$
-    is_csv = 0
-    if right$(out_file$, 4) == ".csv" or right$(out_file$, 4) == ".CSV"
-        sep$ = ","
-        is_csv = 1
-    endif
+    do_save_tsv = save_to_tsv
+    do_save_csv = save_to_csv
     
     # Praat画面の初期化と見出し出力
     clearinfo
-    header_display$ = "ObjectName" + tab$ + "IntervalIndex" + tab$ + "Label" + tab$ + "StartTime_s" + tab$ + "EndTime_s" + tab$ + "Duration_s" + tab$ + "Duration_ms"
-    header_file$ = "ObjectName" + sep$ + "IntervalIndex" + sep$ + "Label" + sep$ + "StartTime_s" + sep$ + "EndTime_s" + sep$ + "Duration_s" + sep$ + "Duration_ms"
-    appendInfoLine: header_display$
+    header_tsv$ = "ObjectName" + tab$ + "IntervalIndex" + tab$ + "Label" + tab$ + "StartTime_s" + tab$ + "EndTime_s" + tab$ + "Duration_s" + tab$ + "Duration_ms"
+    header_csv$ = "ObjectName,IntervalIndex,Label,StartTime_s,EndTime_s,Duration_s,Duration_ms"
+    appendInfoLine: header_tsv$
     
-    writeFileLine: out_file$, header_file$
+    if do_save_tsv
+        writeFileLine: tsv_out_file$, header_tsv$
+    endif
+    if do_save_csv
+        writeFileLine: csv_out_file$, header_csv$
+    endif
     
     file_list = Create Strings as file list: "fileList", folder$ + "*" + ext$
     num_files = Get number of strings
@@ -269,19 +282,25 @@ else
                     clean_label$ = replace_regex$(label$, "^\s+|\s+$", "", 0)
                     
                     if not (skip_empty and clean_label$ == "")
-                        row_display$ = basename$ + tab$ + string$(j) + tab$ + clean_label$ + tab$ + start_str$ + tab$ + end_str$ + tab$ + dur_s_str$ + tab$ + dur_ms_str$
-                        appendInfoLine: row_display$
+                        row_tsv$ = basename$ + tab$ + string$(j) + tab$ + clean_label$ + tab$ + start_str$ + tab$ + end_str$ + tab$ + dur_s_str$ + tab$ + dur_ms_str$
+                        appendInfoLine: row_tsv$
                         
-                        file_label$ = clean_label$
-                        if is_csv and (index(file_label$, ",") > 0 or index(file_label$, """") > 0)
-                            file_label$ = """" + replace_regex$(file_label$, """", """""", 0) + """"
+                        if do_save_tsv
+                            appendFileLine: tsv_out_file$, row_tsv$
                         endif
-                        file_base$ = basename$
-                        if is_csv and (index(file_base$, ",") > 0 or index(file_base$, """") > 0)
-                            file_base$ = """" + replace_regex$(file_base$, """", """""", 0) + """"
+                        
+                        if do_save_csv
+                            csv_label$ = clean_label$
+                            if index(csv_label$, ",") > 0 or index(csv_label$, """") > 0
+                                csv_label$ = """" + replace_regex$(csv_label$, """", """""", 0) + """"
+                            endif
+                            csv_base$ = basename$
+                            if index(csv_base$, ",") > 0 or index(csv_base$, """") > 0
+                                csv_base$ = """" + replace_regex$(csv_base$, """", """""", 0) + """"
+                            endif
+                            row_csv$ = csv_base$ + "," + string$(j) + "," + csv_label$ + "," + start_str$ + "," + end_str$ + "," + dur_s_str$ + "," + dur_ms_str$
+                            appendFileLine: csv_out_file$, row_csv$
                         endif
-                        row_file$ = file_base$ + sep$ + string$(j) + sep$ + file_label$ + sep$ + start_str$ + sep$ + end_str$ + sep$ + dur_s_str$ + sep$ + dur_ms_str$
-                        appendFileLine: out_file$, row_file$
                         total_intervals = total_intervals + 1
                         
                         if do_write_tg
