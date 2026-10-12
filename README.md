@@ -1,4 +1,4 @@
-# Praat Scripts (日本語解説版 / Japanese Edition)
+# Praat 音響分析スクリプト集・日本語プラグイン
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 [![Praat: 6.x / 7.x](https://img.shields.io/badge/Praat-6.x%20%2F%207.x-green.svg)](https://www.fon.hum.uva.nl/praat/)
