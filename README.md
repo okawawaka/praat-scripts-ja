@@ -59,6 +59,14 @@ Mietta Lennes 氏の **SpeCT (Speech Corpus Toolkit for Praat)** および [Fiel
 
 ---
 
+### 5. バージョン表示 (`scripts/`)
+
+| スクリプト名 | 主な用途 |
+| :--- | :--- |
+| **[`about.praat`](scripts/about.praat)** | プラグインのバージョン、実行中の Praat バージョン、OS 環境を表示・出力する |
+
+---
+
 ### Google Colab 版
 
 Praat をローカル環境にインストールすることなく、ブラウザ上で実行できる Google Colab ノートブックです（Pythonライブラリ `praat-parselmouth` を使用）。
