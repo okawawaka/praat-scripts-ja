@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>OGP Image Template - Praat Scripts JA</title>
+<style>
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+  html, body {
+    width: 1200px;
+    height: 630px;
+    overflow: hidden;
+    background-color: #ffffff;
+    color: #111111;
+    font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Segoe UI", "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic UI", Meiryo, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .canvas {
+    width: 1200px;
+    height: 630px;
+    border: 6px solid #111111;
+    padding: 44px 68px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    background: #ffffff;
+  }
+  header {
+    border-bottom: 3px solid #111111;
+    padding-bottom: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+  .site-title {
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    color: #111111;
+  }
+  .header-meta {
+    font-size: 17px;
+    color: #555555;
+    display: flex;
+    gap: 28px;
+    font-weight: 500;
+  }
+  .header-meta .repo {
+    text-decoration: underline;
+    text-underline-offset: 4px;
+  }
+  .main-body {
+    padding: 8px 0;
+  }
+  .hero-lead {
+    font-size: 42px;
+    font-weight: 800;
+    line-height: 1.3;
+    letter-spacing: -0.02em;
+    color: #111111;
+    margin-bottom: 28px;
+  }
+  .hero-list {
+    font-size: 22px;
+    line-height: 1.75;
+    color: #444444;
+    list-style: disc;
+    padding-left: 28px;
+    margin-bottom: 36px;
+  }
+  .hero-list li {
+    margin-bottom: 10px;
+  }
+  .hero-list li:last-child {
+    margin-bottom: 0;
+  }
+  .hero-list strong {
+    color: #111111;
+    font-weight: 700;
+  }
+  .download-section {
+    border-top: 1px solid #e0e0e0;
+    padding-top: 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .download-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .download-buttons {
+    display: flex;
+    gap: 20px;
+  }
+  .btn-download {
+    display: inline-flex;
+    flex-direction: column;
+    justify-content: center;
+    background-color: #0033cc;
+    color: #ffffff;
+    padding: 16px 30px;
+    min-width: 340px;
+    border: 1px solid #0033cc;
+  }
+  .btn-label {
+    font-size: 21px;
+    font-weight: 700;
+    line-height: 1.25;
+  }
+  .btn-filename {
+    font-size: 14px;
+    font-family: Consolas, "SFMono-Regular", Menlo, monospace;
+    opacity: 0.88;
+    margin-top: 5px;
+  }
+  .script-count-box {
+    background: #f8f8f8;
+    border-left: 4px solid #111111;
+    padding: 14px 22px;
+    text-align: left;
+  }
+  .script-count-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: #111111;
+    margin-bottom: 4px;
+  }
+  .script-count-sub {
+    font-size: 13px;
+    color: #555555;
+    font-family: Consolas, monospace;
+  }
+  .download-meta-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12.5px;
+    color: #555555;
+    font-family: Consolas, "SFMono-Regular", Menlo, monospace;
+    white-space: nowrap;
+  }
+  .url-badge {
+    background: #111111;
+    color: #ffffff;
+    font-weight: 700;
+    padding: 6px 14px;
+    font-size: 12.5px;
+  }
+</style>
+</head>
+<body>
+  <div class="canvas">
+    <header>
+      <div class="site-title">Praat Scripts JA</div>
+      <div class="header-meta">
+        <span>Release v1.1.0</span>
+        <span class="repo">GitHub Repository</span>
+      </div>
+    </header>
+
+    <div class="main-body">
+      <div class="hero-lead">
+        Praat 音響分析スクリプト集・日本語プラグイン
+      </div>
+      <ul class="hero-list">
+        <li>フォルマント・ピッチ（F0）・継続時間の一括測定や音声切り出しを、<strong>日本語ダイアログ</strong>から簡単に実行</li>
+        <li>分析結果は Excel や R / Python で扱いやすい <strong>CSV / TSV 形式</strong>での入出力に対応</li>
+        <li>Mietta Lennes 氏の SpeCT 等をベースに、<strong>Praat 6.x および最新の 7.x 系構文</strong>へ完全対応</li>
+      </ul>
+    </div>
+
+    <div class="download-section">
+      <div class="download-row">
+        <div class="download-buttons">
+          <div class="btn-download">
+            <span class="btn-label">Windows 版をダウンロード</span>
+            <span class="btn-filename">Praat-JapaneseTools-Setup.exe</span>
+          </div>
+          <div class="btn-download">
+            <span class="btn-label">macOS 版をダウンロード</span>
+            <span class="btn-filename">Praat-JapaneseTools-Setup.pkg</span>
+          </div>
+        </div>
+        <div class="script-count-box">
+          <div class="script-count-title">全9種の日本語スクリプト収録</div>
+          <div class="script-count-sub">F1-F5 / F0 / Duration / WAV分割 / 母音図</div>
+        </div>
+      </div>
+      <div class="download-meta-row">
+        <span>Version 1.1.0 • Praat 6.x / 7.x 完全対応 • Windows &amp; macOS (Intel / Apple Silicon) • 管理者権限不要</span>
+        <span class="url-badge">https://okawawaka.github.io/praat-scripts-ja/</span>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
