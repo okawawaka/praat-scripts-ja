@@ -3,9 +3,16 @@
 # 
 # 【概要】
 # 音声と TextGrid から、指定した段（Tier）の各ラベル区間におけるピッチ（基本周波数 F0）の
-# 平均値（Mean）、中央値（Median）、最小値（Min）、最大値（Max）、標準偏差（StDev）
-# を自動測定して一覧集計します。
+# 平均値（Mean）、中央値（Median）、最小値（Min）、最大値（Max）、標準偏差（StDev）、
+# および四分位数（Q25, Q75）を自動測定して一覧集計します。
 # 
+# 【四分位数(IQR)による異常値・倍音・半周波音フィルタリング機能】
+# 音声分析で頻発するオクターブ跳躍（倍音誤検出: F0が2倍になる現象）や
+# オクターブドロップ（半周波誤検出: F0が半分になる現象）、ノイズによる外れ値を
+# 音響音声学で標準的な「四分位範囲（IQR / Tukey's fences）」および
+# 「話者適応型 2-Pass 最適ピッチ抽出 (De Looze & Hirst法)」によって自動検出し排除します。
+# これにより、一瞬の倍音・半周波飛びによる MaxPitch や MinPitch、Mean、StDev の歪みを防ぎます。
+#
 # 【ハイブリッド機能（パス手動入力不要）】
 # 1. 【選択オブジェクト分析モード】
 #    Praat上で Sound と TextGrid を選択している場合、
@@ -34,7 +41,7 @@ if num_sound > 0 and num_tg == 0
     sound_name$ = selected$("Sound")
     matching_tg = Find Object: "TextGrid " + sound_name$
     if matching_tg > 0
-        plusObject: sound_id
+        plusObject: matching_tg
         num_tg = 1
     endif
 elsif num_tg > 0 and num_sound == 0
@@ -43,7 +50,7 @@ elsif num_tg > 0 and num_sound == 0
     tg_name$ = selected$("TextGrid")
     matching_sound = Find Object: "Sound " + tg_name$
     if matching_sound > 0
-        plusObject: tg_id
+        plusObject: matching_sound
         num_sound = 1
     endif
 endif
@@ -60,8 +67,12 @@ if num_sound > 0 and num_tg > 0
         boolean: "skip_empty_labels", 0
         comment: "ピッチ探索下限（男性: 75, 女性・子供: 100 Hz）:"
         positive: "pitch_floor_hz", 75.0
-        comment: "ピッチ探索上限（男性: 300, 女性・子供: 500〜600 Hz）:"
+        comment: "ピッチ探索上限（男性: 300〜500, 女性・子供: 500〜600 Hz）:"
         positive: "pitch_ceiling_hz", 500.0
+        comment: "四分位数(IQR)による異常値（倍音・半周波音）の自動排除:"
+        boolean: "filter_pitch_outliers", 1
+        comment: "外れ値判定のIQR倍率（標準: 1.5。1.0〜1.5推奨）:"
+        positive: "iqr_multiplier", 1.5
         comment: "TSVで保存（タブ区切り .tsv）:"
         boolean: "save_to_tsv", 0
         comment: "CSVで保存（カンマ区切り .csv）:"
@@ -76,6 +87,8 @@ if num_sound > 0 and num_tg > 0
     skip_empty = skip_empty_labels
     p_floor = pitch_floor_hz
     p_ceil = pitch_ceiling_hz
+    do_filter_outliers = filter_pitch_outliers
+    iqr_mult = iqr_multiplier
     do_save_tsv = save_to_tsv
     do_save_csv = save_to_csv
     
@@ -106,8 +119,8 @@ if num_sound > 0 and num_tg > 0
     sound_name$ = selected$("Sound")
     
     clearinfo
-    header_tsv$ = "ObjectName" + tab$ + "IntervalIndex" + tab$ + "Label" + tab$ + "StartTime_s" + tab$ + "EndTime_s" + tab$ + "Duration_ms" + tab$ + "MeanPitch_Hz" + tab$ + "MedianPitch_Hz" + tab$ + "MinPitch_Hz" + tab$ + "MaxPitch_Hz" + tab$ + "StDevPitch_Hz"
-    header_csv$ = "ObjectName,IntervalIndex,Label,StartTime_s,EndTime_s,Duration_ms,MeanPitch_Hz,MedianPitch_Hz,MinPitch_Hz,MaxPitch_Hz,StDevPitch_Hz"
+    header_tsv$ = "ObjectName" + tab$ + "IntervalIndex" + tab$ + "Label" + tab$ + "StartTime_s" + tab$ + "EndTime_s" + tab$ + "Duration_ms" + tab$ + "MeanPitch_Hz" + tab$ + "MedianPitch_Hz" + tab$ + "MinPitch_Hz" + tab$ + "MaxPitch_Hz" + tab$ + "StDevPitch_Hz" + tab$ + "Q25Pitch_Hz" + tab$ + "Q75Pitch_Hz"
+    header_csv$ = "ObjectName,IntervalIndex,Label,StartTime_s,EndTime_s,Duration_ms,MeanPitch_Hz,MedianPitch_Hz,MinPitch_Hz,MaxPitch_Hz,StDevPitch_Hz,Q25Pitch_Hz,Q75Pitch_Hz"
     appendInfoLine: header_tsv$
     
     if do_save_tsv and tsv_out_file$ <> ""
@@ -119,7 +132,78 @@ if num_sound > 0 and num_tg > 0
     
     # ピッチオブジェクト生成
     selectObject: sound_id
-    pitch = To Pitch: 0.01, p_floor, p_ceil
+    pitch_init = To Pitch: 0.0, p_floor, p_ceil
+    
+    if do_filter_outliers
+        selectObject: pitch_init
+        q25_all = Get quantile: 0.0, 0.0, 0.25, "Hertz"
+        q50_all = Get quantile: 0.0, 0.0, 0.50, "Hertz"
+        q75_all = Get quantile: 0.0, 0.0, 0.75, "Hertz"
+        
+        if q25_all <> undefined and q75_all <> undefined and q50_all <> undefined
+            # Step 1: 話者適応型 2-Pass 最適ピッチ抽出 (De Looze & Hirst法)
+            opt_floor = round(q25_all * 0.75)
+            opt_ceiling = round(q75_all * 1.50)
+            
+            if opt_floor < p_floor
+                opt_floor = p_floor
+            endif
+            if opt_ceiling > p_ceil
+                opt_ceiling = p_ceil
+            endif
+            
+            if opt_floor < opt_ceiling
+                selectObject: sound_id
+                pitch_opt = To Pitch: 0.0, opt_floor, opt_ceiling
+                removeObject: pitch_init
+                pitch = pitch_opt
+            else
+                pitch = pitch_init
+            endif
+            
+            # Step 2: 四分位数（IQR法 / Tukey's fences）による倍音・半周波・異常値フレーム除外
+            selectObject: pitch
+            q25 = Get quantile: 0.0, 0.0, 0.25, "Hertz"
+            q50 = Get quantile: 0.0, 0.0, 0.50, "Hertz"
+            q75 = Get quantile: 0.0, 0.0, 0.75, "Hertz"
+            
+            if q25 <> undefined and q75 <> undefined and q50 <> undefined
+                iqr = q75 - q25
+                min_iqr = q50 * 0.15
+                if min_iqr < 20.0
+                    min_iqr = 20.0
+                endif
+                if iqr < min_iqr
+                    iqr = min_iqr
+                endif
+                
+                cutoff_low = q25 - iqr_mult * iqr
+                cutoff_high = q75 + iqr_mult * iqr
+                
+                octave_low = q50 * 0.55
+                octave_high = q50 * 1.85
+                if cutoff_low < octave_low
+                    cutoff_low = octave_low
+                endif
+                if cutoff_high > octave_high
+                    cutoff_high = octave_high
+                endif
+                
+                if cutoff_low < p_floor
+                    cutoff_low = p_floor
+                endif
+                if cutoff_high > p_ceil
+                    cutoff_high = p_ceil
+                endif
+                
+                Formula: "if self < " + string$(cutoff_low) + " or self > " + string$(cutoff_high) + " then undefined else self fi"
+            endif
+        else
+            pitch = pitch_init
+        endif
+    else
+        pitch = pitch_init
+    endif
     
     selectObject: tg_id
     num_tiers = Get number of tiers
@@ -146,9 +230,11 @@ if num_sound > 0 and num_tg > 0
                     selectObject: pitch
                     mean_f0 = Get mean: start_t, end_t, "Hertz"
                     median_f0 = Get quantile: start_t, end_t, 0.5, "Hertz"
-                    min_f0 = Get minimum: start_t, end_t, "Hertz", "Parabolic"
-                    max_f0 = Get maximum: start_t, end_t, "Hertz", "Parabolic"
+                    min_f0 = Get minimum: start_t, end_t, "Hertz", "None"
+                    max_f0 = Get maximum: start_t, end_t, "Hertz", "None"
                     stdev_f0 = Get standard deviation: start_t, end_t, "Hertz"
+                    q25_f0 = Get quantile: start_t, end_t, 0.25, "Hertz"
+                    q75_f0 = Get quantile: start_t, end_t, 0.75, "Hertz"
                     
                     if mean_f0 = undefined
                         mean_str$ = "NA"
@@ -179,9 +265,21 @@ if num_sound > 0 and num_tg > 0
                     else
                         std_str$ = fixed$(stdev_f0, 2)
                     endif
+
+                    if q25_f0 = undefined
+                        q25_str$ = "NA"
+                    else
+                        q25_str$ = fixed$(q25_f0, 2)
+                    endif
+
+                    if q75_f0 = undefined
+                        q75_str$ = "NA"
+                    else
+                        q75_str$ = fixed$(q75_f0, 2)
+                    endif
                     
                     dur_ms = duration_s * 1000
-                    row_tsv$ = sound_name$ + tab$ + string$(j) + tab$ + clean_label$ + tab$ + fixed$(start_t, 4) + tab$ + fixed$(end_t, 4) + tab$ + fixed$(dur_ms, 2) + tab$ + mean_str$ + tab$ + med_str$ + tab$ + min_str$ + tab$ + max_str$ + tab$ + std_str$
+                    row_tsv$ = sound_name$ + tab$ + string$(j) + tab$ + clean_label$ + tab$ + fixed$(start_t, 4) + tab$ + fixed$(end_t, 4) + tab$ + fixed$(dur_ms, 2) + tab$ + mean_str$ + tab$ + med_str$ + tab$ + min_str$ + tab$ + max_str$ + tab$ + std_str$ + tab$ + q25_str$ + tab$ + q75_str$
                     appendInfoLine: row_tsv$
                     
                     if do_save_tsv and tsv_out_file$ <> ""
@@ -196,7 +294,7 @@ if num_sound > 0 and num_tg > 0
                         if index(csv_sound$, ",") > 0 or index(csv_sound$, """") > 0
                             csv_sound$ = """" + replace_regex$(csv_sound$, """", """""", 0) + """"
                         endif
-                        row_csv$ = csv_sound$ + "," + string$(j) + "," + csv_label$ + "," + fixed$(start_t, 4) + "," + fixed$(end_t, 4) + "," + fixed$(dur_ms, 2) + "," + mean_str$ + "," + med_str$ + "," + min_str$ + "," + max_str$ + "," + std_str$
+                        row_csv$ = csv_sound$ + "," + string$(j) + "," + csv_label$ + "," + fixed$(start_t, 4) + "," + fixed$(end_t, 4) + "," + fixed$(dur_ms, 2) + "," + mean_str$ + "," + med_str$ + "," + min_str$ + "," + max_str$ + "," + std_str$ + "," + q25_str$ + "," + q75_str$
                         appendFileLine: csv_out_file$, row_csv$
                     endif
                 endif
@@ -235,8 +333,12 @@ else
         boolean: "skip_empty_labels", 0
         comment: "ピッチ探索下限（男性: 75, 女性・子供: 100 Hz）:"
         positive: "pitch_floor_hz", 75.0
-        comment: "ピッチ探索上限（男性: 300, 女性・子供: 500〜600 Hz）:"
+        comment: "ピッチ探索上限（男性: 300〜500, 女性・子供: 500〜600 Hz）:"
         positive: "pitch_ceiling_hz", 500.0
+        comment: "四分位数(IQR)による異常値（倍音・半周波音）の自動排除:"
+        boolean: "filter_pitch_outliers", 1
+        comment: "外れ値判定のIQR倍率（標準: 1.5。1.0〜1.5推奨）:"
+        positive: "iqr_multiplier", 1.5
         comment: "TSVで保存 (pitch_results.tsv):"
         boolean: "save_to_tsv", 1
         comment: "CSVで保存 (pitch_results.csv):"
@@ -251,12 +353,14 @@ else
     skip_empty = skip_empty_labels
     p_floor = pitch_floor_hz
     p_ceil = pitch_ceiling_hz
+    do_filter_outliers = filter_pitch_outliers
+    iqr_mult = iqr_multiplier
     do_save_tsv = save_to_tsv
     do_save_csv = save_to_csv
     
     clearinfo
-    header_tsv$ = "Filename" + tab$ + "IntervalIndex" + tab$ + "Label" + tab$ + "StartTime_s" + tab$ + "EndTime_s" + tab$ + "Duration_ms" + tab$ + "MeanPitch_Hz" + tab$ + "MedianPitch_Hz" + tab$ + "MinPitch_Hz" + tab$ + "MaxPitch_Hz" + tab$ + "StDevPitch_Hz"
-    header_csv$ = "Filename,IntervalIndex,Label,StartTime_s,EndTime_s,Duration_ms,MeanPitch_Hz,MedianPitch_Hz,MinPitch_Hz,MaxPitch_Hz,StDevPitch_Hz"
+    header_tsv$ = "Filename" + tab$ + "IntervalIndex" + tab$ + "Label" + tab$ + "StartTime_s" + tab$ + "EndTime_s" + tab$ + "Duration_ms" + tab$ + "MeanPitch_Hz" + tab$ + "MedianPitch_Hz" + tab$ + "MinPitch_Hz" + tab$ + "MaxPitch_Hz" + tab$ + "StDevPitch_Hz" + tab$ + "Q25Pitch_Hz" + tab$ + "Q75Pitch_Hz"
+    header_csv$ = "Filename,IntervalIndex,Label,StartTime_s,EndTime_s,Duration_ms,MeanPitch_Hz,MedianPitch_Hz,MinPitch_Hz,MaxPitch_Hz,StDevPitch_Hz,Q25Pitch_Hz,Q75Pitch_Hz"
     appendInfoLine: header_tsv$
     
     if do_save_tsv
@@ -290,8 +394,80 @@ else
             sound = Read from file: sound_path$
             tg = Read from file: tg_path$
             
+            # ピッチオブジェクト生成
             selectObject: sound
-            pitch = To Pitch: 0.01, p_floor, p_ceil
+            pitch_init = To Pitch: 0.0, p_floor, p_ceil
+            
+            if do_filter_outliers
+                selectObject: pitch_init
+                q25_all = Get quantile: 0.0, 0.0, 0.25, "Hertz"
+                q50_all = Get quantile: 0.0, 0.0, 0.50, "Hertz"
+                q75_all = Get quantile: 0.0, 0.0, 0.75, "Hertz"
+                
+                if q25_all <> undefined and q75_all <> undefined and q50_all <> undefined
+                    # Step 1: 話者適応型 2-Pass 最適ピッチ抽出 (De Looze & Hirst法)
+                    opt_floor = round(q25_all * 0.75)
+                    opt_ceiling = round(q75_all * 1.50)
+                    
+                    if opt_floor < p_floor
+                        opt_floor = p_floor
+                    endif
+                    if opt_ceiling > p_ceil
+                        opt_ceiling = p_ceil
+                    endif
+                    
+                    if opt_floor < opt_ceiling
+                        selectObject: sound
+                        pitch_opt = To Pitch: 0.0, opt_floor, opt_ceiling
+                        removeObject: pitch_init
+                        pitch = pitch_opt
+                    else
+                        pitch = pitch_init
+                    endif
+                    
+                    # Step 2: 四分位数（IQR法 / Tukey's fences）による倍音・半周波・異常値フレーム除外
+                    selectObject: pitch
+                    q25 = Get quantile: 0.0, 0.0, 0.25, "Hertz"
+                    q50 = Get quantile: 0.0, 0.0, 0.50, "Hertz"
+                    q75 = Get quantile: 0.0, 0.0, 0.75, "Hertz"
+                    
+                    if q25 <> undefined and q75 <> undefined and q50 <> undefined
+                        iqr = q75 - q25
+                        min_iqr = q50 * 0.15
+                        if min_iqr < 20.0
+                            min_iqr = 20.0
+                        endif
+                        if iqr < min_iqr
+                            iqr = min_iqr
+                        endif
+                        
+                        cutoff_low = q25 - iqr_mult * iqr
+                        cutoff_high = q75 + iqr_mult * iqr
+                        
+                        octave_low = q50 * 0.55
+                        octave_high = q50 * 1.85
+                        if cutoff_low < octave_low
+                            cutoff_low = octave_low
+                        endif
+                        if cutoff_high > octave_high
+                            cutoff_high = octave_high
+                        endif
+                        
+                        if cutoff_low < p_floor
+                            cutoff_low = p_floor
+                        endif
+                        if cutoff_high > p_ceil
+                            cutoff_high = p_ceil
+                        endif
+                        
+                        Formula: "if self < " + string$(cutoff_low) + " or self > " + string$(cutoff_high) + " then undefined else self fi"
+                    endif
+                else
+                    pitch = pitch_init
+                endif
+            else
+                pitch = pitch_init
+            endif
             
             selectObject: tg
             num_tiers = Get number of tiers
@@ -318,9 +494,11 @@ else
                             selectObject: pitch
                             mean_f0 = Get mean: start_t, end_t, "Hertz"
                             median_f0 = Get quantile: start_t, end_t, 0.5, "Hertz"
-                            min_f0 = Get minimum: start_t, end_t, "Hertz", "Parabolic"
-                            max_f0 = Get maximum: start_t, end_t, "Hertz", "Parabolic"
+                            min_f0 = Get minimum: start_t, end_t, "Hertz", "None"
+                            max_f0 = Get maximum: start_t, end_t, "Hertz", "None"
                             stdev_f0 = Get standard deviation: start_t, end_t, "Hertz"
+                            q25_f0 = Get quantile: start_t, end_t, 0.25, "Hertz"
+                            q75_f0 = Get quantile: start_t, end_t, 0.75, "Hertz"
                             
                             if mean_f0 = undefined
                                 mean_str$ = "NA"
@@ -351,9 +529,21 @@ else
                             else
                                 std_str$ = fixed$(stdev_f0, 2)
                             endif
+
+                            if q25_f0 = undefined
+                                q25_str$ = "NA"
+                            else
+                                q25_str$ = fixed$(q25_f0, 2)
+                            endif
+
+                            if q75_f0 = undefined
+                                q75_str$ = "NA"
+                            else
+                                q75_str$ = fixed$(q75_f0, 2)
+                            endif
                             
                             dur_ms = duration_s * 1000
-                            row_tsv$ = basename$ + tab$ + string$(j) + tab$ + clean_label$ + tab$ + fixed$(start_t, 4) + tab$ + fixed$(end_t, 4) + tab$ + fixed$(dur_ms, 2) + tab$ + mean_str$ + tab$ + med_str$ + tab$ + min_str$ + tab$ + max_str$ + tab$ + std_str$
+                            row_tsv$ = basename$ + tab$ + string$(j) + tab$ + clean_label$ + tab$ + fixed$(start_t, 4) + tab$ + fixed$(end_t, 4) + tab$ + fixed$(dur_ms, 2) + tab$ + mean_str$ + tab$ + med_str$ + tab$ + min_str$ + tab$ + max_str$ + tab$ + std_str$ + tab$ + q25_str$ + tab$ + q75_str$
                             appendInfoLine: row_tsv$
                             
                             if do_save_tsv
@@ -368,7 +558,7 @@ else
                                 if index(csv_base$, ",") > 0 or index(csv_base$, """") > 0
                                     csv_base$ = """" + replace_regex$(csv_base$, """", """""", 0) + """"
                                 endif
-                                row_csv$ = csv_base$ + "," + string$(j) + "," + csv_label$ + "," + fixed$(start_t, 4) + "," + fixed$(end_t, 4) + "," + fixed$(dur_ms, 2) + "," + mean_str$ + "," + med_str$ + "," + min_str$ + "," + max_str$ + "," + std_str$
+                                row_csv$ = csv_base$ + "," + string$(j) + "," + csv_label$ + "," + fixed$(start_t, 4) + "," + fixed$(end_t, 4) + "," + fixed$(dur_ms, 2) + "," + mean_str$ + "," + med_str$ + "," + min_str$ + "," + max_str$ + "," + std_str$ + "," + q25_str$ + "," + q75_str$
                                 appendFileLine: csv_out_file$, row_csv$
                             endif
                         endif
