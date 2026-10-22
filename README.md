@@ -37,7 +37,7 @@ Mietta Lennes 氏の **SpeCT (Speech Corpus Toolkit for Praat)** および [Fiel
 | スクリプト名 | 主な用途 |
 | :--- | :--- |
 | **[`collect_formant_data.praat`](scripts/acoustic-analysis/collect_formant_data.praat)** | 各母音区間の中央点におけるフォルマント（F1〜F5）と帯域幅を測定し、CSV/TSVに出力する |
-| **[`collect_pitch_data.praat`](scripts/acoustic-analysis/collect_pitch_data.praat)** | 各区間のピッチ（F0）の平均値・中央値・最大/最小値・標準偏差・四分位数（Q25/Q75）を集計（四分位数IQRによる倍音・半周波音の自動排除対応） |
+| **[`collect_pitch_data.praat`](scripts/acoustic-analysis/collect_pitch_data.praat)** | 各区間のピッチ（F0）の平均値・中央値・最大/最小値・標準偏差・四分位数（Q25/Q75）を集計（四分位数IQRによる倍音・半周波音フィルタ、単一話者／複数話者・対話モード対応） |
 | **[`calculate_segment_durations.praat`](scripts/acoustic-analysis/calculate_segment_durations.praat)** | 各区間の開始時刻・終了時刻・継続時間（秒/ミリ秒）を集計する |
 
 ---
@@ -75,7 +75,7 @@ Praat をローカル環境にインストールすることなく、ブラウ�
 | :--- | :--- | :--- |
 | **区間継続時間の計算** | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/okawawaka/praat-scripts-ja/blob/main/notebooks/calculate_segment_durations.ipynb) | TextGrid を選択し、継続時間（秒/ms）を集計して TSV をダウンロード |
 | **フォルマント抽出** | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/okawawaka/praat-scripts-ja/blob/main/notebooks/collect_formant_data.ipynb) | 音声とTextGridから各区間中央点のF1〜F5および帯域幅を測定して TSV をダウンロード |
-| **ピッチ（F0）統計抽出** | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/okawawaka/praat-scripts-ja/blob/main/notebooks/collect_pitch_data.ipynb) | 音声とTextGridから各区間の平均・中央値・最大/最小・四分位数を測定して TSV をダウンロード（倍音・半周波音フィルタ対応） |
+| **ピッチ（F0）統計抽出** | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/okawawaka/praat-scripts-ja/blob/main/notebooks/collect_pitch_data.ipynb) | 音声とTextGridから各区間の平均・中央値・最大/最小・四分位数を測定して TSV をダウンロード（倍音・半周波音フィルタ、単一話者／対話両対応） |
 | **音声区間の切り出し** | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/okawawaka/praat-scripts-ja/blob/main/notebooks/extract_intervals_to_wav.ipynb) | TextGridの区間ラベルに従ってWAVを切り出し、ZIPでダウンロード |
 | **無音・ポーズの自動検出** | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/okawawaka/praat-scripts-ja/blob/main/notebooks/mark_pauses.ipynb) | 音声(WAV)から無音・ポーズ区間を検出し、生成されたTextGridをZIPでダウンロード |
 

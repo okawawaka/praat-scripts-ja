@@ -9,9 +9,15 @@
 # 【四分位数(IQR)による異常値・倍音・半周波音フィルタリング機能】
 # 音声分析で頻発するオクターブ跳躍（倍音誤検出: F0が2倍になる現象）や
 # オクターブドロップ（半周波誤検出: F0が半分になる現象）、ノイズによる外れ値を
-# 音響音声学で標準的な「四分位範囲（IQR / Tukey's fences）」および
-# 「話者適応型 2-Pass 最適ピッチ抽出 (De Looze & Hirst法)」によって自動検出し排除します。
-# これにより、一瞬の倍音・半周波飛びによる MaxPitch や MinPitch、Mean、StDev の歪みを防ぎます。
+# 音響音声学で標準的な「四分位範囲（IQR / Tukey's fences）」によって自動検出し排除します。
+# 
+# 【単一話者／複数話者（対話）への両対応モード】
+# 1. 「ファイル全体」基準（単一話者向け）:
+#    話者適応型 2-Pass 最適ピッチ抽出 (De Looze & Hirst法) とファイル全体の四分位数により、
+#    母音1音などの極めて短い区間でも安定して倍音・半周波音を排除します。
+# 2. 「発話区間ごと」基準（複数話者・対話録音向け）:
+#    各区間（インターバル）ごとにその発話者のピッチ分布から四分位数を局所計算するため、
+#    男性（低音）と女性（高音）が混在する対話音声でも誤判定を起こさず安全に測定できます。
 #
 # 【ハイブリッド機能（パス手動入力不要）】
 # 1. 【選択オブジェクト分析モード】
@@ -65,12 +71,16 @@ if num_sound > 0 and num_tg > 0
         positive: "tier_number", 1
         comment: "空白ラベル（無音区間など）を除外する（チェックを外すと全区間を測定）:"
         boolean: "skip_empty_labels", 0
-        comment: "ピッチ探索下限（男性: 75, 女性・子供: 100 Hz）:"
+        comment: "ピッチ探索下限（男性: 75, 女性・子供: 100, 対話混合: 60 Hz）:"
         positive: "pitch_floor_hz", 75.0
-        comment: "ピッチ探索上限（男性: 300〜500, 女性・子供: 500〜600 Hz）:"
+        comment: "ピッチ探索上限（男性: 300〜500, 女性・子供: 500〜600, 対話混合: 500〜600 Hz）:"
         positive: "pitch_ceiling_hz", 500.0
         comment: "四分位数(IQR)による異常値（倍音・半周波音）の自動排除:"
         boolean: "filter_pitch_outliers", 1
+        comment: "外れ値判定の計算単位（単一話者ならファイル全体、複数話者・対話なら区間ごと）:"
+        choice: "filter_scope", 1
+            option: "ファイル全体（単一話者・短区間でも安定）"
+            option: "発話区間ごと（複数話者・対話録音向け）"
         comment: "外れ値判定のIQR倍率（標準: 1.5。1.0〜1.5推奨）:"
         positive: "iqr_multiplier", 1.5
         comment: "TSVで保存（タブ区切り .tsv）:"
@@ -88,6 +98,7 @@ if num_sound > 0 and num_tg > 0
     p_floor = pitch_floor_hz
     p_ceil = pitch_ceiling_hz
     do_filter_outliers = filter_pitch_outliers
+    f_scope = filter_scope
     iqr_mult = iqr_multiplier
     do_save_tsv = save_to_tsv
     do_save_csv = save_to_csv
@@ -135,71 +146,132 @@ if num_sound > 0 and num_tg > 0
     pitch_init = To Pitch: 0.0, p_floor, p_ceil
     
     if do_filter_outliers
-        selectObject: pitch_init
-        q25_all = Get quantile: 0.0, 0.0, 0.25, "Hertz"
-        q50_all = Get quantile: 0.0, 0.0, 0.50, "Hertz"
-        q75_all = Get quantile: 0.0, 0.0, 0.75, "Hertz"
-        
-        if q25_all <> undefined and q75_all <> undefined and q50_all <> undefined
-            # Step 1: 話者適応型 2-Pass 最適ピッチ抽出 (De Looze & Hirst法)
-            opt_floor = round(q25_all * 0.75)
-            opt_ceiling = round(q75_all * 1.50)
+        if f_scope == 1
+            # ------------------------------------------------------------------
+            # 【方式1: ファイル全体】単一話者の音声向け（極短区間でも安定）
+            # ------------------------------------------------------------------
+            selectObject: pitch_init
+            q25_all = Get quantile: 0.0, 0.0, 0.25, "Hertz"
+            q50_all = Get quantile: 0.0, 0.0, 0.50, "Hertz"
+            q75_all = Get quantile: 0.0, 0.0, 0.75, "Hertz"
             
-            if opt_floor < p_floor
-                opt_floor = p_floor
-            endif
-            if opt_ceiling > p_ceil
-                opt_ceiling = p_ceil
-            endif
-            
-            if opt_floor < opt_ceiling
-                selectObject: sound_id
-                pitch_opt = To Pitch: 0.0, opt_floor, opt_ceiling
-                removeObject: pitch_init
-                pitch = pitch_opt
+            if q25_all <> undefined and q75_all <> undefined and q50_all <> undefined
+                # Step 1: 話者適応型 2-Pass 最適ピッチ抽出 (De Looze & Hirst法)
+                opt_floor = round(q25_all * 0.75)
+                opt_ceiling = round(q75_all * 1.50)
+                
+                if opt_floor < p_floor
+                    opt_floor = p_floor
+                endif
+                if opt_ceiling > p_ceil
+                    opt_ceiling = p_ceil
+                endif
+                
+                if opt_floor < opt_ceiling
+                    selectObject: sound_id
+                    pitch_opt = To Pitch: 0.0, opt_floor, opt_ceiling
+                    removeObject: pitch_init
+                    pitch = pitch_opt
+                else
+                    pitch = pitch_init
+                endif
+                
+                # Step 2: 四分位数（IQR法 / Tukey's fences）による倍音・半周波・異常値フレーム除外
+                selectObject: pitch
+                q25 = Get quantile: 0.0, 0.0, 0.25, "Hertz"
+                q50 = Get quantile: 0.0, 0.0, 0.50, "Hertz"
+                q75 = Get quantile: 0.0, 0.0, 0.75, "Hertz"
+                
+                if q25 <> undefined and q75 <> undefined and q50 <> undefined
+                    iqr = q75 - q25
+                    min_iqr = q50 * 0.15
+                    if min_iqr < 20.0
+                        min_iqr = 20.0
+                    endif
+                    if iqr < min_iqr
+                        iqr = min_iqr
+                    endif
+                    
+                    cutoff_low = q25 - iqr_mult * iqr
+                    cutoff_high = q75 + iqr_mult * iqr
+                    
+                    octave_low = q50 * 0.55
+                    octave_high = q50 * 1.85
+                    if cutoff_low < octave_low
+                        cutoff_low = octave_low
+                    endif
+                    if cutoff_high > octave_high
+                        cutoff_high = octave_high
+                    endif
+                    
+                    if cutoff_low < p_floor
+                        cutoff_low = p_floor
+                    endif
+                    if cutoff_high > p_ceil
+                        cutoff_high = p_ceil
+                    endif
+                    
+                    Formula: "if self < " + string$(cutoff_low) + " or self > " + string$(cutoff_high) + " then undefined else self fi"
+                endif
             else
                 pitch = pitch_init
             endif
-            
-            # Step 2: 四分位数（IQR法 / Tukey's fences）による倍音・半周波・異常値フレーム除外
-            selectObject: pitch
-            q25 = Get quantile: 0.0, 0.0, 0.25, "Hertz"
-            q50 = Get quantile: 0.0, 0.0, 0.50, "Hertz"
-            q75 = Get quantile: 0.0, 0.0, 0.75, "Hertz"
-            
-            if q25 <> undefined and q75 <> undefined and q50 <> undefined
-                iqr = q75 - q25
-                min_iqr = q50 * 0.15
-                if min_iqr < 20.0
-                    min_iqr = 20.0
-                endif
-                if iqr < min_iqr
-                    iqr = min_iqr
-                endif
-                
-                cutoff_low = q25 - iqr_mult * iqr
-                cutoff_high = q75 + iqr_mult * iqr
-                
-                octave_low = q50 * 0.55
-                octave_high = q50 * 1.85
-                if cutoff_low < octave_low
-                    cutoff_low = octave_low
-                endif
-                if cutoff_high > octave_high
-                    cutoff_high = octave_high
-                endif
-                
-                if cutoff_low < p_floor
-                    cutoff_low = p_floor
-                endif
-                if cutoff_high > p_ceil
-                    cutoff_high = p_ceil
-                endif
-                
-                Formula: "if self < " + string$(cutoff_low) + " or self > " + string$(cutoff_high) + " then undefined else self fi"
-            endif
         else
+            # ------------------------------------------------------------------
+            # 【方式2: 発話区間ごと】複数話者・対話の音声向け（話者混在でも安全）
+            # ------------------------------------------------------------------
             pitch = pitch_init
+            
+            selectObject: tg_id
+            num_tiers_chk = Get number of tiers
+            if target_tier <= num_tiers_chk
+                is_int_chk = Is interval tier: target_tier
+                if is_int_chk == 1
+                    n_int_chk = Get number of intervals: target_tier
+                    for k to n_int_chk
+                        selectObject: tg_id
+                        k_start = Get start time of interval: target_tier, k
+                        k_end = Get end time of interval: target_tier, k
+                        
+                        selectObject: pitch
+                        k_q25 = Get quantile: k_start, k_end, 0.25, "Hertz"
+                        k_q50 = Get quantile: k_start, k_end, 0.50, "Hertz"
+                        k_q75 = Get quantile: k_start, k_end, 0.75, "Hertz"
+                        
+                        if k_q25 <> undefined and k_q75 <> undefined and k_q50 <> undefined
+                            k_iqr = k_q75 - k_q25
+                            k_min_iqr = k_q50 * 0.15
+                            if k_min_iqr < 20.0
+                                k_min_iqr = 20.0
+                            endif
+                            if k_iqr < k_min_iqr
+                                k_iqr = k_min_iqr
+                            endif
+                            
+                            k_c_low = k_q25 - iqr_mult * k_iqr
+                            k_c_high = k_q75 + iqr_mult * k_iqr
+                            
+                            k_oct_low = k_q50 * 0.55
+                            k_oct_high = k_q50 * 1.85
+                            if k_c_low < k_oct_low
+                                k_c_low = k_oct_low
+                            endif
+                            if k_c_high > k_oct_high
+                                k_c_high = k_oct_high
+                            endif
+                            
+                            if k_c_low < p_floor
+                                k_c_low = p_floor
+                            endif
+                            if k_c_high > p_ceil
+                                k_c_high = p_ceil
+                            endif
+                            
+                            Formula: "if x >= " + string$(k_start) + " and x <= " + string$(k_end) + " and (self < " + string$(k_c_low) + " or self > " + string$(k_c_high) + ") then undefined else self fi"
+                        endif
+                    endfor
+                endif
+            endif
         endif
     else
         pitch = pitch_init
@@ -331,12 +403,16 @@ else
         positive: "tier_number", 1
         comment: "空白ラベル（無音区間など）を除外する（チェックを外すと全区間を測定）:"
         boolean: "skip_empty_labels", 0
-        comment: "ピッチ探索下限（男性: 75, 女性・子供: 100 Hz）:"
+        comment: "ピッチ探索下限（男性: 75, 女性・子供: 100, 対話混合: 60 Hz）:"
         positive: "pitch_floor_hz", 75.0
-        comment: "ピッチ探索上限（男性: 300〜500, 女性・子供: 500〜600 Hz）:"
+        comment: "ピッチ探索上限（男性: 300〜500, 女性・子供: 500〜600, 対話混合: 500〜600 Hz）:"
         positive: "pitch_ceiling_hz", 500.0
         comment: "四分位数(IQR)による異常値（倍音・半周波音）の自動排除:"
         boolean: "filter_pitch_outliers", 1
+        comment: "外れ値判定の計算単位（単一話者ならファイル全体、複数話者・対話なら区間ごと）:"
+        choice: "filter_scope", 1
+            option: "ファイル全体（単一話者・短区間でも安定）"
+            option: "発話区間ごと（複数話者・対話録音向け）"
         comment: "外れ値判定のIQR倍率（標準: 1.5。1.0〜1.5推奨）:"
         positive: "iqr_multiplier", 1.5
         comment: "TSVで保存 (pitch_results.tsv):"
@@ -354,6 +430,7 @@ else
     p_floor = pitch_floor_hz
     p_ceil = pitch_ceiling_hz
     do_filter_outliers = filter_pitch_outliers
+    f_scope = filter_scope
     iqr_mult = iqr_multiplier
     do_save_tsv = save_to_tsv
     do_save_csv = save_to_csv
@@ -399,71 +476,132 @@ else
             pitch_init = To Pitch: 0.0, p_floor, p_ceil
             
             if do_filter_outliers
-                selectObject: pitch_init
-                q25_all = Get quantile: 0.0, 0.0, 0.25, "Hertz"
-                q50_all = Get quantile: 0.0, 0.0, 0.50, "Hertz"
-                q75_all = Get quantile: 0.0, 0.0, 0.75, "Hertz"
-                
-                if q25_all <> undefined and q75_all <> undefined and q50_all <> undefined
-                    # Step 1: 話者適応型 2-Pass 最適ピッチ抽出 (De Looze & Hirst法)
-                    opt_floor = round(q25_all * 0.75)
-                    opt_ceiling = round(q75_all * 1.50)
+                if f_scope == 1
+                    # ----------------------------------------------------------
+                    # 【方式1: ファイル全体】単一話者の音声向け（極短区間でも安定）
+                    # ----------------------------------------------------------
+                    selectObject: pitch_init
+                    q25_all = Get quantile: 0.0, 0.0, 0.25, "Hertz"
+                    q50_all = Get quantile: 0.0, 0.0, 0.50, "Hertz"
+                    q75_all = Get quantile: 0.0, 0.0, 0.75, "Hertz"
                     
-                    if opt_floor < p_floor
-                        opt_floor = p_floor
-                    endif
-                    if opt_ceiling > p_ceil
-                        opt_ceiling = p_ceil
-                    endif
-                    
-                    if opt_floor < opt_ceiling
-                        selectObject: sound
-                        pitch_opt = To Pitch: 0.0, opt_floor, opt_ceiling
-                        removeObject: pitch_init
-                        pitch = pitch_opt
+                    if q25_all <> undefined and q75_all <> undefined and q50_all <> undefined
+                        # Step 1: 話者適応型 2-Pass 最適ピッチ抽出 (De Looze & Hirst法)
+                        opt_floor = round(q25_all * 0.75)
+                        opt_ceiling = round(q75_all * 1.50)
+                        
+                        if opt_floor < p_floor
+                            opt_floor = p_floor
+                        endif
+                        if opt_ceiling > p_ceil
+                            opt_ceiling = p_ceil
+                        endif
+                        
+                        if opt_floor < opt_ceiling
+                            selectObject: sound
+                            pitch_opt = To Pitch: 0.0, opt_floor, opt_ceiling
+                            removeObject: pitch_init
+                            pitch = pitch_opt
+                        else
+                            pitch = pitch_init
+                        endif
+                        
+                        # Step 2: 四分位数（IQR法 / Tukey's fences）による倍音・半周波・異常値フレーム除外
+                        selectObject: pitch
+                        q25 = Get quantile: 0.0, 0.0, 0.25, "Hertz"
+                        q50 = Get quantile: 0.0, 0.0, 0.50, "Hertz"
+                        q75 = Get quantile: 0.0, 0.0, 0.75, "Hertz"
+                        
+                        if q25 <> undefined and q75 <> undefined and q50 <> undefined
+                            iqr = q75 - q25
+                            min_iqr = q50 * 0.15
+                            if min_iqr < 20.0
+                                min_iqr = 20.0
+                            endif
+                            if iqr < min_iqr
+                                iqr = min_iqr
+                            endif
+                            
+                            cutoff_low = q25 - iqr_mult * iqr
+                            cutoff_high = q75 + iqr_mult * iqr
+                            
+                            octave_low = q50 * 0.55
+                            octave_high = q50 * 1.85
+                            if cutoff_low < octave_low
+                                cutoff_low = octave_low
+                            endif
+                            if cutoff_high > octave_high
+                                cutoff_high = octave_high
+                            endif
+                            
+                            if cutoff_low < p_floor
+                                cutoff_low = p_floor
+                            endif
+                            if cutoff_high > p_ceil
+                                cutoff_high = p_ceil
+                            endif
+                            
+                            Formula: "if self < " + string$(cutoff_low) + " or self > " + string$(cutoff_high) + " then undefined else self fi"
+                        endif
                     else
                         pitch = pitch_init
                     endif
-                    
-                    # Step 2: 四分位数（IQR法 / Tukey's fences）による倍音・半周波・異常値フレーム除外
-                    selectObject: pitch
-                    q25 = Get quantile: 0.0, 0.0, 0.25, "Hertz"
-                    q50 = Get quantile: 0.0, 0.0, 0.50, "Hertz"
-                    q75 = Get quantile: 0.0, 0.0, 0.75, "Hertz"
-                    
-                    if q25 <> undefined and q75 <> undefined and q50 <> undefined
-                        iqr = q75 - q25
-                        min_iqr = q50 * 0.15
-                        if min_iqr < 20.0
-                            min_iqr = 20.0
-                        endif
-                        if iqr < min_iqr
-                            iqr = min_iqr
-                        endif
-                        
-                        cutoff_low = q25 - iqr_mult * iqr
-                        cutoff_high = q75 + iqr_mult * iqr
-                        
-                        octave_low = q50 * 0.55
-                        octave_high = q50 * 1.85
-                        if cutoff_low < octave_low
-                            cutoff_low = octave_low
-                        endif
-                        if cutoff_high > octave_high
-                            cutoff_high = octave_high
-                        endif
-                        
-                        if cutoff_low < p_floor
-                            cutoff_low = p_floor
-                        endif
-                        if cutoff_high > p_ceil
-                            cutoff_high = p_ceil
-                        endif
-                        
-                        Formula: "if self < " + string$(cutoff_low) + " or self > " + string$(cutoff_high) + " then undefined else self fi"
-                    endif
                 else
+                    # ----------------------------------------------------------
+                    # 【方式2: 発話区間ごと】複数話者・対話の音声向け（話者混在でも安全）
+                    # ----------------------------------------------------------
                     pitch = pitch_init
+                    
+                    selectObject: tg
+                    num_tiers_chk = Get number of tiers
+                    if target_tier <= num_tiers_chk
+                        is_int_chk = Is interval tier: target_tier
+                        if is_int_chk == 1
+                            n_int_chk = Get number of intervals: target_tier
+                            for k to n_int_chk
+                                selectObject: tg
+                                k_start = Get start time of interval: target_tier, k
+                                k_end = Get end time of interval: target_tier, k
+                                
+                                selectObject: pitch
+                                k_q25 = Get quantile: k_start, k_end, 0.25, "Hertz"
+                                k_q50 = Get quantile: k_start, k_end, 0.50, "Hertz"
+                                k_q75 = Get quantile: k_start, k_end, 0.75, "Hertz"
+                                
+                                if k_q25 <> undefined and k_q75 <> undefined and k_q50 <> undefined
+                                    k_iqr = k_q75 - k_q25
+                                    k_min_iqr = k_q50 * 0.15
+                                    if k_min_iqr < 20.0
+                                        k_min_iqr = 20.0
+                                    endif
+                                    if k_iqr < k_min_iqr
+                                        k_iqr = k_min_iqr
+                                    endif
+                                    
+                                    k_c_low = k_q25 - iqr_mult * k_iqr
+                                    k_c_high = k_q75 + iqr_mult * k_iqr
+                                    
+                                    k_oct_low = k_q50 * 0.55
+                                    k_oct_high = k_q50 * 1.85
+                                    if k_c_low < k_oct_low
+                                        k_c_low = k_oct_low
+                                    endif
+                                    if k_c_high > k_oct_high
+                                        k_c_high = k_oct_high
+                                    endif
+                                    
+                                    if k_c_low < p_floor
+                                        k_c_low = p_floor
+                                    endif
+                                    if k_c_high > p_ceil
+                                        k_c_high = p_ceil
+                                    endif
+                                    
+                                    Formula: "if x >= " + string$(k_start) + " and x <= " + string$(k_end) + " and (self < " + string$(k_c_low) + " or self > " + string$(k_c_high) + ") then undefined else self fi"
+                                endif
+                            endfor
+                        endif
+                    endif
                 endif
             else
                 pitch = pitch_init
